@@ -5,6 +5,7 @@
 {
 	"version": "0.2.0",
     "configurations": [
+
         {
             "name": "Extension",
             "type": "extensionHost",
@@ -31,6 +32,16 @@
                 "${workspaceFolder}/out/test/**/*.js"
             ],
             "preLaunchTask": "npm: watch"
-        }
+        },
+		{
+			"name": "Run utests",
+			"type": "node",
+            "request": "launch",
+			"program": "${workspaceFolder}/node_modules/ts-mocha/bin/ts-mocha",
+			"stopOnEntry": false,
+			"args": ["-p", "${workspaceFolder}/", "${workspaceFolder}/src/utest/**/*.test.ts"],
+			//"cwd": "${workspaceFolder}",
+			"runtimeExecutable": null,
+		}
     ]
 }

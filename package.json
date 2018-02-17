@@ -13,7 +13,7 @@
     "activationEvents": [
         "onCommand:extension.sayHello"
     ],
-    "main": "./out/extension",
+    "main": "./out/src/extension",
     "contributes": {
         "commands": [
             {
@@ -27,13 +27,21 @@
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "postinstall": "node ./node_modules/vscode/bin/install",
-        "test": "npm run compile && node ./node_modules/vscode/bin/test"
+        "test": "npm run compile && node ./node_modules/vscode/bin/test",
+        "utest": "ts-mocha -p ./ src/utest/**/*.test.ts",
+        "utest-watch": "ts-mocha --watch -p ./ src/utest/**/*.test.ts"
     },
     "devDependencies": {
-        "typescript": "^2.6.1",
-        "vscode": "^1.1.6",
-        "tslint": "^5.8.0",
+        "@types/chai": "^4.1.2",
+        "@types/mocha": "^2.2.42",
         "@types/node": "^7.0.43",
-        "@types/mocha": "^2.2.42"
+        "chai": "^4.1.2",
+        "ts-mocha": "^1.1.0",
+        "tslint": "^5.8.0",
+        "typescript": "^2.6.1",
+        "vscode": "^1.1.6"
+    },
+    "dependencies": {
+        "jsonc-parser": "^0.4.2"
     }
 }
