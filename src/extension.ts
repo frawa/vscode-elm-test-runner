@@ -2,6 +2,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import {ElmTestsProvider} from './elmTestRunner'
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -22,6 +23,11 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     context.subscriptions.push(disposable);
+
+    // FW
+    const elmTestsProvider = new ElmTestsProvider(context);
+    vscode.window.registerTreeDataProvider('elmTestRunner', elmTestsProvider);
+	vscode.commands.registerCommand('elmTestRunner.run', () => elmTestsProvider.run());
 }
 
 // this method is called when your extension is deactivated

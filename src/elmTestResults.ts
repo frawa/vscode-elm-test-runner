@@ -1,6 +1,5 @@
 
-import * as json from 'jsonc-parser';
-import { isNull } from 'util';
+import * as json from 'jsonc-parser'
 
 export interface Result {
     event: string
@@ -26,6 +25,9 @@ export class ResultTree {
 
     accept(result: Result): void {
         this._tests.push(result)
+        if (result.event === 'testCompleted') {
+            this._root.addResult(result)
+        }
     }
 
     public get tests(): Result[] {
