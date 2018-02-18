@@ -74,6 +74,15 @@ export class Node {
             this.subs.push(newNode)
             newNode.add(labels, result)
         }
+    }
 
+    public get green(): boolean {
+        if (this.result) {
+            return this.result.status === 'pass'
+        }
+        if (this.subs.length > 0) {
+            return this.subs.every(sub => sub.green)
+        }
+        return false;
     }
 }

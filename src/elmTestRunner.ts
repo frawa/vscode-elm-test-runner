@@ -86,7 +86,9 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 	private getState(node: Node): vscode.TreeItemCollapsibleState {
 		if (node.subs.length > 0) {
-			return vscode.TreeItemCollapsibleState.Expanded
+			return node.green
+				? vscode.TreeItemCollapsibleState.Collapsed
+				: vscode.TreeItemCollapsibleState.Expanded
 		}
 		return vscode.TreeItemCollapsibleState.None
 	}
@@ -97,19 +99,17 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	}
 
 	private getIcon(node: Node): any {
-		if (node.result) {
-			if (node.result.status === 'pass') {
-				let green = this.context.asAbsolutePath(path.join('resources', 'Green_check.svg'))
-				return {
-					light: green,
-					dark: green
-				}
-			} else {
-				let red = this.context.asAbsolutePath(path.join('resources', 'Red_x.svg'))
-				return {
-					light: red,
-					dark: red
-				}				
+		if (node.green) {
+			let green = this.context.asAbsolutePath(path.join('resources', 'Green_check.svg'))
+			return {
+				light: green,
+				dark: green
+			}
+		} else {
+			let red = this.context.asAbsolutePath(path.join('resources', 'Red_x.svg'))
+			return {
+				light: red,
+				dark: red
 			}
 		}
 		// 	let nodeType = node.type;

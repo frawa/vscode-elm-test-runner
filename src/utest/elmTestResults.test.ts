@@ -130,5 +130,50 @@ describe('Elm Test Results Tests', () => {
             expect(root.subs[1].subs[0].name).to.eql('test2')
             expect(root.subs[1].subs[0].result).to.equal(result2)
         })
+
+        it('is green', () => {
+            let result: Result = {
+                event: ''
+                , status: 'pass'
+                , labels: ['test']
+                , failures: []
+                , duration: '0'
+            }
+            root.addResult(result)
+            expect(root.subs).to.be.length(1)
+            expect(root.subs[0].name).to.eql('test')
+            expect(root.subs[0].green).to.be.true
+        })
+
+        it('is not green', () => {
+            let result: Result = {
+                event: ''
+                , status: 'fail'
+                , labels: ['test']
+                , failures: []
+                , duration: '0'
+            }
+            root.addResult(result)
+            expect(root.subs).to.be.length(1)
+            expect(root.subs[0].name).to.eql('test')
+            expect(root.subs[0].green).to.be.false
+        })
+
+        it('is green deep', () => {
+            let result: Result = {
+                event: ''
+                , status: 'pass'
+                , labels: ['suite', 'test']
+                , failures: []
+                , duration: '0'
+            }
+            root.addResult(result)
+            expect(root.subs).to.be.length(1)
+            expect(root.subs[0].name).to.eql('suite')
+            expect(root.subs[0].green).to.be.true
+            expect(root.subs[0].subs[0].name).to.eql('test')
+            expect(root.subs[0].subs[0].green).to.be.true
+        })
+
     })
 })
