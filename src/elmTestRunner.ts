@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-// import * as path from 'path';
+import * as path from 'path';
 // import { isNumber } from 'util';
 import { } from './elmTestResult';
 import { ResultTree, Node } from './elmTestResults';
@@ -97,6 +97,21 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	}
 
 	private getIcon(node: Node): any {
+		if (node.result) {
+			if (node.result.status === 'pass') {
+				let green = this.context.asAbsolutePath(path.join('resources', 'Green_check.svg'))
+				return {
+					light: green,
+					dark: green
+				}
+			} else {
+				let red = this.context.asAbsolutePath(path.join('resources', 'Red_x.svg'))
+				return {
+					light: red,
+					dark: red
+				}				
+			}
+		}
 		// 	let nodeType = node.type;
 		// 	if (nodeType === 'boolean') {
 		// 		return {
