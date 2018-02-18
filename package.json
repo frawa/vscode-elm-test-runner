@@ -14,7 +14,7 @@
         "onCommand:extension.sayHello",
         "onView:elmTestRunner"
     ],
-    "main": "./out/src/extension",
+    "main": "./out/extension",
     "contributes": {
         "commands": [
             {
@@ -22,31 +22,31 @@
                 "title": "Hello World"
             },
             {
-				"command": "elmTestRunner.run",
-				"title": "Run",
-				"icon": {
-					"light": "resources/light/refresh.svg",
-					"dark": "resources/dark/refresh.svg"
-				}
-			}
+                "command": "elmTestRunner.run",
+                "title": "Run",
+                "icon": {
+                    "light": "resources/light/refresh.svg",
+                    "dark": "resources/dark/refresh.svg"
+                }
+            }
         ],
-		"views": {
-			"explorer": [
-				{
-					"id": "elmTestRunner",
-					"name": "Elm Test Runner"
+        "views": {
+            "explorer": [
+                {
+                    "id": "elmTestRunner",
+                    "name": "Elm Test Runner"
                 }
             ]
         },
         "menus": {
-			"view/title": [
-				{
-					"command": "elmTestRunner.run",
-					"when": "view == elmTestRunner",
-					"group": "navigation"
-				}
-			]
-		}
+            "view/title": [
+                {
+                    "command": "elmTestRunner.run",
+                    "when": "view == elmTestRunner",
+                    "group": "navigation"
+                }
+            ]
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
@@ -68,6 +68,8 @@
         "vscode": "^1.1.6"
     },
     "dependencies": {
-        "jsonc-parser": "^0.4.2"
+        "@types/ramda": "^0.25.18",
+        "jsonc-parser": "^0.4.2",
+        "ramda": "^0.25.0"
     }
 }

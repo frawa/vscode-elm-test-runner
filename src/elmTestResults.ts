@@ -1,5 +1,6 @@
 
 import * as json from 'jsonc-parser'
+// import * as R from 'ramda'
 
 export interface Result {
     event: string
@@ -20,10 +21,14 @@ export class ResultTree {
     parse(lines: string[]): void {
         lines
             .map(parseTestResult)
+            //. filter undefined
             .forEach(result => this.accept(result))
     }
 
     accept(result: Result): void {
+        if (!result) {
+            return;
+        }
         this._tests.push(result)
         if (result.event === 'testCompleted') {
             this._root.addResult(result)

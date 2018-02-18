@@ -1,13 +1,15 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-import { isNumber } from 'util';
+// import * as path from 'path';
+// import { isNumber } from 'util';
 import { } from './elmTestResult';
 import { ResultTree, Node } from './elmTestResults';
 
+import * as child_process from 'child_process'
+
 export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
-	// private _onDidChangeTreeData: vscode.EventEmitter<number | null> = new vscode.EventEmitter<number | null>();
-	// readonly onDidChangeTreeData: vscode.Event<number | null> = this._onDidChangeTreeData.event;
+	private _onDidChangeTreeData: vscode.EventEmitter<Node | null> = new vscode.EventEmitter<Node | null>();
+	readonly onDidChangeTreeData: vscode.Event<Node | null> = this._onDidChangeTreeData.event;
 
 	private tree: ResultTree = new ResultTree;
 	// private text: string;
@@ -23,21 +25,35 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		// 	this.autoRefresh = vscode.workspace.getConfiguration('jsonOutline').get('autorefresh');
 		// });
 		// this.onActiveEditorChanged();
+		console.log("FW", context.extensionPath)
 		this.run()
 	}
 
 	run(): void {
 
-		let dummy = [
-			'{"event":"runStart","testCount":"9","fuzzRuns":"100","paths":[],"initialSeed":"927798309"}'
-			, '{"event":"testCompleted","status":"pass","labels":["JenkinsTest","The Jenkins module","Data","can save"],"failures":[],"duration":"0"}'
-			, '{"event":"testCompleted","status":"pass","labels":["JenkinsTest","The Jenkins module","Data","can not save"],"failures":[],"duration":"1"}'
-			, '{"event":"testCompleted","status":"pass","labels":["JenkinsTest","The Jenkins module","Data","copy"],"failures":[],"duration":"1"}'
-			, '{"event":"runComplete","passed":"9","failed":"0","duration":"239","autoFail":null}'
-		]
-
 		this.tree = new ResultTree
-		this.tree.parse(dummy);
+		this._onDidChangeTreeData.fire();
+
+		// TODO support multiple workspaces
+		// console.log("FW",vscode.workspace.rootPath)
+
+		const elm = child_process.spawn('elm', ['test', '--report', 'json'], {
+			cwd: vscode.workspace.rootPath
+		});
+
+		elm.stdout.on('data', (data: string) => {
+			console.log(`stdout: ${data.toString()}`);
+			this.tree.parse(data.toString().split('\n'))
+			this._onDidChangeTreeData.fire();
+		});
+
+		elm.stderr.on('data', (data: string) => {
+			console.log(`stderr: ${data}`);
+		});
+
+		elm.on('close', (code: number) => {
+			console.log(`child prcess exited with code ${code}`);
+		});
 	}
 
 	getChildren(node?: Node): Thenable<Node[]> {
