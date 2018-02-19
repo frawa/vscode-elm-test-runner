@@ -3,7 +3,10 @@ import * as json from 'jsonc-parser'
 // import * as R from 'ramda'
 
 export interface Failure {
-	message: string
+    message: string
+    reason: {
+        data: any
+    }
 }
 
 export interface Result {

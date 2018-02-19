@@ -7,7 +7,7 @@ import { ResultTree, Node, Failure } from './elmTestResults';
 import * as child_process from 'child_process'
 
 
-type TreeNode = Node | Failure
+type TreeNode = Node | string
 
 export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 
@@ -64,12 +64,35 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 		}
 		if (node instanceof Node) {
 			if (node.result && node.result.failures.length > 0) {
-				return Promise.resolve(node.result.failures)
+				return Promise.resolve(this.failuresToLines(node.result.failures))
 			}
 			return Promise.resolve(node.subs)
 		}
 		return Promise.resolve([])
 	}
+
+	failuresToLines(failures: Failure[]): string[] {
+		let failureToLines = (failure: Failure) => {
+			let result: string[] = []
+			if (failure.message) {
+				result.push(failure.message)
+			}
+			if (failure.reason && failure.reason.data && (typeof failure.reason.data !== 'string') ) {
+				let data = failure.reason.data
+				for (let key in data) {
+					result.push(`${key}: ${data[key]}`)
+				}
+			}
+			return result
+		}
+
+		let result: string[] = []
+		failures
+			.forEach(failure => result = result.concat(failureToLines(failure)))
+		return result;
+	}
+
+
 
 	// private getChildrenOffsets(node: json.Node): number[] {
 	// 	const offsets: number[] = [];
@@ -131,7 +154,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 		if (node instanceof Node) {
 			return node.name
 		}
-		return node.message
+		return node
 	}
 }
 
