@@ -1,5 +1,6 @@
 
 import * as json from 'jsonc-parser'
+import { Uri } from 'vscode';
 // import * as R from 'ramda'
 
 export interface Failure {
@@ -24,6 +25,9 @@ export function parseTestResult(line: string): Result {
 export class ResultTree {
     private _tests: Result[] = []
     private _root: Node = new Node
+
+    constructor(public readonly path?: string) {
+    }
 
     parse(lines: string[]): void {
         lines
@@ -57,7 +61,9 @@ export class Node {
     result?: Result
 
     addResult(result: Result): void {
-        this.add(result.labels, result)
+        let labels: string[] = []
+        labels = labels.concat(result.labels)
+        this.add(labels, result)
     }
 
     private add(labels: string[], result: Result): void {

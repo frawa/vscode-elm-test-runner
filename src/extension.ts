@@ -27,7 +27,8 @@ export function activate(context: vscode.ExtensionContext) {
     // FW
     const elmTestsProvider = new ElmTestsProvider(context);
     vscode.window.registerTreeDataProvider('elmTestRunner', elmTestsProvider);
-	vscode.commands.registerCommand('elmTestRunner.run', () => elmTestsProvider.run());
+    vscode.commands.registerCommand('elmTestRunner.run', () => elmTestsProvider.run());
+    vscode.commands.registerCommand('extension.openElmTestSelection', labels => elmTestsProvider.select(labels));
 }
 
 // this method is called when your extension is deactivated

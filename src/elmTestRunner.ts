@@ -33,15 +33,15 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 	}
 
 	run(): void {
-		this.tree = new ResultTree
+		// TODO support multiple workspaces
+		let path = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath
+
+		this.tree = new ResultTree(path)
 		this._onDidChangeTreeData.fire();
 
-		// TODO support multiple workspaces
-		// console.log("FW",vscode.workspace.rootPath)
-
 		const elm = child_process.spawn('elm', ['test', '--report', 'json'], {
-			cwd: vscode.workspace.rootPath
-		});
+			cwd: this.tree.path
+		})
 
 		elm.stdout.on('data', (data: string) => {
 			console.log(`stdout: ${data.toString()}`);
@@ -77,7 +77,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 			if (failure.message) {
 				result.push(failure.message)
 			}
-			if (failure.reason && failure.reason.data && (typeof failure.reason.data !== 'string') ) {
+			if (failure.reason && failure.reason.data && (typeof failure.reason.data !== 'string')) {
 				let data = failure.reason.data
 				for (let key in data) {
 					result.push(`${key}: ${data[key]}`)
@@ -109,7 +109,15 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 	getTreeItem(node: TreeNode): vscode.TreeItem {
 		let result = new vscode.TreeItem(this.getLabel(node), this.getState(node))
 		result.iconPath = this.getIcon(node)
-		// result.contextValue = valueNode.type
+
+		if (node instanceof Node && node.result) {
+			result.command = {
+				command: 'extension.openElmTestSelection',
+				title: '',
+				arguments: [node.result.labels]
+			};
+		}
+
 		return result
 	}
 
@@ -126,9 +134,13 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 		return vscode.TreeItemCollapsibleState.None
 	}
 
-	select(range: vscode.Range) {
+	select(labels: string[]) {
+		console.log("FW",labels)
 		// this.editor.selection = new vscode.Selection(range.start, range.end);
 		// this.editor.revealRange(range)
+		let testPath = `${this.tree.path}/tests/${labels[0]}.elm`
+		console.log("FW",testPath)
+		vscode.workspace.openTextDocument(testPath)
 	}
 
 	private getIcon(node: TreeNode): any {
