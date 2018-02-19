@@ -2,11 +2,14 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 // import { isNumber } from 'util';
 import { } from './elmTestResult';
-import { ResultTree, Node } from './elmTestResults';
+import { ResultTree, Node, Failure } from './elmTestResults';
 
 import * as child_process from 'child_process'
 
-export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
+
+type TreeNode = Node | Failure
+
+export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 
 	private _onDidChangeTreeData: vscode.EventEmitter<Node | null> = new vscode.EventEmitter<Node | null>();
 	readonly onDidChangeTreeData: vscode.Event<Node | null> = this._onDidChangeTreeData.event;
@@ -30,7 +33,6 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	}
 
 	run(): void {
-
 		this.tree = new ResultTree
 		this._onDidChangeTreeData.fire();
 
@@ -56,8 +58,17 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		});
 	}
 
-	getChildren(node?: Node): Thenable<Node[]> {
-		return Promise.resolve(node ? node.subs : this.tree.root.subs)
+	getChildren(node?: TreeNode): Thenable<TreeNode[]> {
+		if (!node) {
+			return Promise.resolve(this.tree.root.subs)
+		}
+		if (node instanceof Node) {
+			if (node.result && node.result.failures.length > 0) {
+				return Promise.resolve(node.result.failures)
+			}
+			return Promise.resolve(node.subs)
+		}
+		return Promise.resolve([])
 	}
 
 	// private getChildrenOffsets(node: json.Node): number[] {
@@ -72,23 +83,22 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	// 	return offsets;
 	// }
 
-	getTreeItem(node: Node): vscode.TreeItem {
+	getTreeItem(node: TreeNode): vscode.TreeItem {
 		let result = new vscode.TreeItem(this.getLabel(node), this.getState(node))
 		result.iconPath = this.getIcon(node)
 		// result.contextValue = valueNode.type
 		return result
-		// treeItem.command = {
-		// 	command: 'extension.openJsonSelection',
-		// 	title: '',
-		// 	arguments: [new vscode.Range(this.editor.document.positionAt(valueNode.offset), this.editor.document.positionAt(valueNode.offset + valueNode.length))]
-		// };
 	}
 
-	private getState(node: Node): vscode.TreeItemCollapsibleState {
-		if (node.subs.length > 0) {
-			return node.green
-				? vscode.TreeItemCollapsibleState.Collapsed
-				: vscode.TreeItemCollapsibleState.Expanded
+	private getState(node: TreeNode): vscode.TreeItemCollapsibleState {
+		if (node instanceof Node) {
+			if (node.subs.length > 0) {
+				return node.green
+					? vscode.TreeItemCollapsibleState.Collapsed
+					: vscode.TreeItemCollapsibleState.Expanded
+			} else if (node.result && node.result.failures.length > 0) {
+				return vscode.TreeItemCollapsibleState.Collapsed
+			}
 		}
 		return vscode.TreeItemCollapsibleState.None
 	}
@@ -98,44 +108,30 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		// this.editor.revealRange(range)
 	}
 
-	private getIcon(node: Node): any {
-		if (node.green) {
-			let green = this.context.asAbsolutePath(path.join('resources', 'Green_check.svg'))
-			return {
-				light: green,
-				dark: green
-			}
-		} else {
-			let red = this.context.asAbsolutePath(path.join('resources', 'Red_x.svg'))
-			return {
-				light: red,
-				dark: red
+	private getIcon(node: TreeNode): any {
+		if (node instanceof Node) {
+			if (node.green) {
+				let green = this.context.asAbsolutePath(path.join('resources', 'Green_check.svg'))
+				return {
+					light: green,
+					dark: green
+				}
+			} else {
+				let red = this.context.asAbsolutePath(path.join('resources', 'Red_x.svg'))
+				return {
+					light: red,
+					dark: red
+				}
 			}
 		}
-		// 	let nodeType = node.type;
-		// 	if (nodeType === 'boolean') {
-		// 		return {
-		// 			light: this.context.asAbsolutePath(path.join('resources', 'light', 'boolean.svg')),
-		// 			dark: this.context.asAbsolutePath(path.join('resources', 'dark', 'boolean.svg'))
-		// 		}
-		// 	}
-		// 	if (nodeType === 'string') {
-		// 		return {
-		// 			light: this.context.asAbsolutePath(path.join('resources', 'light', 'string.svg')),
-		// 			dark: this.context.asAbsolutePath(path.join('resources', 'dark', 'string.svg'))
-		// 		}
-		// 	}
-		// 	if (nodeType === 'number') {
-		// 		return {
-		// 			light: this.context.asAbsolutePath(path.join('resources', 'light', 'number.svg')),
-		// 			dark: this.context.asAbsolutePath(path.join('resources', 'dark', 'number.svg'))
-		// 		}
-		// 	}
 		return null;
 	}
 
-	private getLabel(node: Node): string {
-		return node.name
+	private getLabel(node: TreeNode): string {
+		if (node instanceof Node) {
+			return node.name
+		}
+		return node.message
 	}
 }
 

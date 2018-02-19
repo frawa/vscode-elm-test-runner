@@ -2,11 +2,15 @@
 import * as json from 'jsonc-parser'
 // import * as R from 'ramda'
 
+export interface Failure {
+	message: string
+}
+
 export interface Result {
     event: string
     status: string,
     labels: string[],
-    failures: string[],
+    failures: Failure[],
     duration: string
 }
 
