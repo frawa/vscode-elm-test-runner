@@ -135,12 +135,29 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 	}
 
 	select(labels: string[]) {
-		console.log("FW",labels)
+		console.log("FW", labels)
 		// this.editor.selection = new vscode.Selection(range.start, range.end);
 		// this.editor.revealRange(range)
+
+		vscode.commands.getCommands()
+
 		let testPath = `${this.tree.path}/tests/${labels[0]}.elm`
-		console.log("FW",testPath)
+		console.log("FW", testPath)
 		vscode.workspace.openTextDocument(testPath)
+		return vscode.workspace
+			.openTextDocument(testPath)
+			.then(doc => vscode.window.showTextDocument(doc))
+			.then(editor => {
+				let description = labels[labels.length-1]
+				let offset = editor.document.getText().indexOf(description)
+				if (offset>-1) {
+					let pos0 = editor.document.positionAt(offset)
+					let pos1 = editor.document.positionAt(offset+description.length)
+					editor.selection = new vscode.Selection(pos0,pos1)
+					editor.revealRange(new vscode.Range(pos0,pos1))
+				}
+				return vscode.commands.executeCommand('editor.action.selectHighlights')
+			})
 	}
 
 	private getIcon(node: TreeNode): any {
