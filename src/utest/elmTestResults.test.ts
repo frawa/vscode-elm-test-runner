@@ -9,12 +9,16 @@ describe('Elm Test Results Tests', () => {
             let line = '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
             let result = parseTestResult(line)
 
-            expect(result).to.be.not.null
-            expect(result.event).to.eql('testCompleted')
-            expect(result.status).to.eql('pass')
-            expect(result.labels).to.eql(['suite', 'nested', 'test'])
-            expect(result.failures).to.eql([])
-            expect(result.duration).to.eql('13')
+            if (typeof result !== 'string') {
+                expect(result.event).to.eql('testCompleted')
+                expect(result.status).to.eql('pass')
+                expect(result.labels).to.eql(['suite', 'nested', 'test'])
+                expect(result.failures).to.eql([])
+                expect(result.duration).to.eql('13')
+            } else {
+                expect.fail("unexpected: "+result)
+            }
+
         })
         it('model', () => {
             let results = new ResultTree
