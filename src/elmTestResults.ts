@@ -12,9 +12,9 @@ export interface Failure {
 
 export interface Result {
     event: string
-    status: string,
-    labels: string[],
-    failures: Failure[],
+    status: string
+    labels: string[]
+    failures: Failure[]
     duration: string
 }
 
