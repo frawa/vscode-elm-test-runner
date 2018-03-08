@@ -18,13 +18,19 @@ export interface Result {
     duration: string
 }
 
-export function parseTestResult(line: string): Result {
-    return json.parse(line)
+export function parseTestResult(line: string): (Result|string) {
+    var errors : json.ParseError[] = []
+    var result:Result = json.parse(line,errors)
+    if (errors.length>0) {
+        return line
+    }
+    return result
 }
 
 export class ResultTree {
     private _tests: Result[] = []
     private _root: Node = new Node
+    private _stdout: string[] = []
 
     constructor(public readonly path?: string) {
     }
@@ -33,7 +39,13 @@ export class ResultTree {
         lines
             .map(parseTestResult)
             //. filter undefined
-            .forEach(result => this.accept(result))
+            .forEach(result => {
+                if (typeof result ==='string') {
+                    this._stdout.push(result)
+                } else {
+                    this.accept(result)
+                }
+            })
     }
 
     accept(result: Result): void {
@@ -48,6 +60,10 @@ export class ResultTree {
 
     public get tests(): Result[] {
         return this._tests
+    }
+
+    public get stdout(): string[] {
+        return this._stdout
     }
 
     public get root(): Node {

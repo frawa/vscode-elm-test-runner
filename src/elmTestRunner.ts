@@ -59,7 +59,10 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 
 	getChildren(node?: TreeNode): Thenable<TreeNode[]> {
 		if (!node) {
-			return Promise.resolve(this.tree.root.subs)
+			var topLevel:any[] = []
+			Array.prototype.push.apply(topLevel,this.tree.root.subs)
+			Array.prototype.push.apply(topLevel,this.tree.stdout)
+			return Promise.resolve(topLevel)
 		}
 		if (node instanceof Node) {
 			if (node.result && node.result.failures.length > 0) {
