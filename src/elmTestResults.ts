@@ -1,6 +1,6 @@
 
 import * as json from 'jsonc-parser'
-import { Uri } from 'vscode';
+// import { Uri } from 'vscode';
 // import * as R from 'ramda'
 
 export interface Failure {
