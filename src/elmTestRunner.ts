@@ -28,7 +28,6 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 		// 	this.autoRefresh = vscode.workspace.getConfiguration('jsonOutline').get('autorefresh');
 		// });
 		// this.onActiveEditorChanged();
-		console.log("FW", context.extensionPath)
 		this.run()
 	}
 
@@ -135,20 +134,18 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 	}
 
 	select(labels: string[]) {
-		console.log("FW", labels)
 		// this.editor.selection = new vscode.Selection(range.start, range.end);
 		// this.editor.revealRange(range)
 
 		vscode.commands.getCommands()
 
 		let testPath = `${this.tree.path}/tests/${labels[0]}.elm`
-		console.log("FW", testPath)
 		vscode.workspace.openTextDocument(testPath)
 		return vscode.workspace
 			.openTextDocument(testPath)
 			.then(doc => vscode.window.showTextDocument(doc))
 			.then(editor => {
-				let description = labels[labels.length-1]
+				let description = '"'+labels[labels.length-1]+'"'
 				let offset = editor.document.getText().indexOf(description)
 				if (offset>-1) {
 					let pos0 = editor.document.positionAt(offset)
