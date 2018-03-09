@@ -189,7 +189,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 			vscode.commands.executeCommand('vscode.diff',
 				DiffProvider.encodeContent(diff[0]),
 				DiffProvider.encodeContent(diff[1]),
-				node.name
+				`EXPECTED | ${node.name} | ACTUAL`
 			)
 		}
 	}
