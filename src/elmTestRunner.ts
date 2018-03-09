@@ -3,6 +3,7 @@ import * as path from 'path';
 // import { isNumber } from 'util';
 import { } from './elmTestResult';
 import { ResultTree, Node, Failure } from './elmTestResults';
+import { DiffProvider } from './diffProvider'
 
 import * as child_process from 'child_process'
 
@@ -15,6 +16,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 	readonly onDidChangeTreeData: vscode.Event<Node | null> = this._onDidChangeTreeData.event;
 
 	private tree: ResultTree = new ResultTree;
+	private _running: Boolean = false
 	// private text: string;
 	// private editor: vscode.TextEditor;
 
@@ -36,6 +38,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 		let path = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath
 
 		this.tree = new ResultTree(path)
+		this._running = true
 		this._onDidChangeTreeData.fire();
 
 		const elm = child_process.spawn('elm', ['test', '--report', 'json'], {
@@ -56,12 +59,17 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 
 		elm.on('close', (code: number) => {
 			console.log(`child prcess exited with code ${code}`);
+			this._running = false
+			this._onDidChangeTreeData.fire();
 		});
 	}
 
 	getChildren(node?: TreeNode): Thenable<TreeNode[]> {
+		if (this._running) {
+			return Promise.resolve(["Running ..."])
+		}
 		if (!node) {
-			var topLevel: any[] = []
+			var topLevel: TreeNode[] = []
 			Array.prototype.push.apply(topLevel, this.tree.root.subs)
 			Array.prototype.push.apply(topLevel, this.tree.messages)
 			return Promise.resolve(topLevel)
@@ -70,6 +78,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 			if (node.result && node.result.failures.length > 0) {
 				return Promise.resolve(this.failuresToLines(node.result.failures))
 			}
+			console.log("FW", node, node.subs)
 			return Promise.resolve(node.subs)
 		}
 		return Promise.resolve([])
@@ -120,6 +129,9 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 				title: '',
 				arguments: [node.result.labels]
 			}
+			if (node.canDiff) {
+				result.contextValue = 'canDiff'
+			}
 		} else if (typeof node === 'string') {
 			let firstFileInError = new RegExp("^.*?/tests/(.*?)\.elm")
 			let matches = firstFileInError.exec(node)
@@ -132,7 +144,6 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 				}
 			}
 		}
-
 		return result
 	}
 
@@ -197,6 +208,17 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 			return node.name
 		}
 		return node
+	}
+
+	diff(node: Node) {
+		let diff = node.diff
+		if (diff) {
+			vscode.commands.executeCommand('vscode.diff',
+				DiffProvider.encodeContent(diff[0]),
+				DiffProvider.encodeContent(diff[1]),
+				node.name
+			)
+		}
 	}
 }
 

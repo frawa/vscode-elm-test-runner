@@ -18,10 +18,10 @@ export interface Result {
     duration: string
 }
 
-export function parseTestResult(line: string): (Result|string) {
-    var errors : json.ParseError[] = []
-    var result:Result = json.parse(line,errors)
-    if (errors.length>0) {
+export function parseTestResult(line: string): (Result | string) {
+    var errors: json.ParseError[] = []
+    var result: Result = json.parse(line, errors)
+    if (errors.length > 0) {
         return line
     }
     return result
@@ -40,7 +40,7 @@ export class ResultTree {
             .map(parseTestResult)
             //. filter undefined
             .forEach(result => {
-                if (typeof result ==='string') {
+                if (typeof result === 'string') {
                     this._messages.push(result)
                 } else {
                     this.accept(result)
@@ -67,7 +67,7 @@ export class ResultTree {
     }
 
     public set errors(errors: string[]) {
-        Array.prototype.push.apply(this._messages,errors)
+        Array.prototype.push.apply(this._messages, errors)
     }
 
     public get root(): Node {
@@ -116,6 +116,25 @@ export class Node {
         if (this.subs.length > 0) {
             return this.subs.every(sub => sub.green)
         }
-        return false;
+        return false
+    }
+
+    public get canDiff(): boolean {
+        return this.diff !== undefined
+    }
+
+    public get diff(): [string, string]|undefined {
+        if (this.result) {
+            if (this.result.failures.length > 0) {
+                let failure = this.result.failures[0]
+                if (failure.reason
+                    && failure.reason.data
+                    && (typeof failure.reason.data !== 'string')) {
+                    let data = failure.reason.data
+                    return [data.expected, data.actual]
+                }
+            }
+        }
+        return undefined
     }
 }

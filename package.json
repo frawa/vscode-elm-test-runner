@@ -28,7 +28,15 @@
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"
                 }
-            }
+            },
+            {
+				"command": "elmTestRunner.diff",
+				"title": "Difference",
+                "icon": {
+                    "light": "resources/Red_x.svg",
+                    "dark": "resources/Red_x.svg"
+                }
+			}
         ],
         "views": {
             "explorer": [
@@ -45,6 +53,12 @@
                     "when": "view == elmTestRunner",
                     "group": "navigation"
                 }
+            ],
+            "view/item/context": [
+				{
+					"command": "elmTestRunner.diff",
+					"when": "view == elmTestRunner && viewItem == canDiff"
+				}
             ]
         }
     },
