@@ -61,9 +61,9 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 
 	getChildren(node?: TreeNode): Thenable<TreeNode[]> {
 		if (!node) {
-			var topLevel:any[] = []
-			Array.prototype.push.apply(topLevel,this.tree.root.subs)
-			Array.prototype.push.apply(topLevel,this.tree.messages)
+			var topLevel: any[] = []
+			Array.prototype.push.apply(topLevel, this.tree.root.subs)
+			Array.prototype.push.apply(topLevel, this.tree.messages)
 			return Promise.resolve(topLevel)
 		}
 		if (node instanceof Node) {
@@ -119,7 +119,18 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 				command: 'extension.openElmTestSelection',
 				title: '',
 				arguments: [node.result.labels]
-			};
+			}
+		} else if (typeof node === 'string') {
+			let firstFileInError = new RegExp("^.*?/tests/(.*?)\.elm")
+			let matches = firstFileInError.exec(node)
+			if (matches) {
+				let label = matches[1].replace('/', '.')
+				result.command = {
+					command: 'extension.openElmTestSelection',
+					title: '',
+					arguments: [[label]]
+				}
+			}
 		}
 
 		return result
@@ -138,24 +149,27 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 		return vscode.TreeItemCollapsibleState.None
 	}
 
-	select(labels: string[]) {
-		let path = labels[0].replace('.','/')
+	private testPath(file: string): string {
+		return `${this.tree.path}/tests/${file}.elm`
+	}
 
-		let testPath = `${this.tree.path}/tests/${path}.elm`
-		vscode.workspace.openTextDocument(testPath)
-		return vscode.workspace
-			.openTextDocument(testPath)
+	select(labels: string[]) {
+		let path = labels[0].replace('.', '/')
+
+		vscode.workspace.openTextDocument(this.testPath(path))
 			.then(doc => vscode.window.showTextDocument(doc))
 			.then(editor => {
-				let description = '"'+labels[labels.length-1]+'"'
-				let offset = editor.document.getText().indexOf(description)
-				if (offset>-1) {
-					let pos0 = editor.document.positionAt(offset)
-					let pos1 = editor.document.positionAt(offset+description.length)
-					editor.selection = new vscode.Selection(pos0,pos1)
-					editor.revealRange(new vscode.Range(pos0,pos1))
+				if (labels.length > 1) {
+					let description = '"' + labels[labels.length - 1] + '"'
+					let offset = editor.document.getText().indexOf(description)
+					if (offset > -1) {
+						let pos0 = editor.document.positionAt(offset)
+						let pos1 = editor.document.positionAt(offset + description.length)
+						editor.selection = new vscode.Selection(pos0, pos1)
+						editor.revealRange(new vscode.Range(pos0, pos1))
+					}
+					return vscode.commands.executeCommand('editor.action.selectHighlights')
 				}
-				return vscode.commands.executeCommand('editor.action.selectHighlights')
 			})
 	}
 
