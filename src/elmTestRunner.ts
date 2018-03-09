@@ -50,6 +50,8 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 
 		elm.stderr.on('data', (data: string) => {
 			console.log(`stderr: ${data}`);
+			this.tree.errors = data.toString().split('\n')
+			this._onDidChangeTreeData.fire();
 		});
 
 		elm.on('close', (code: number) => {
@@ -61,7 +63,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 		if (!node) {
 			var topLevel:any[] = []
 			Array.prototype.push.apply(topLevel,this.tree.root.subs)
-			Array.prototype.push.apply(topLevel,this.tree.stdout)
+			Array.prototype.push.apply(topLevel,this.tree.messages)
 			return Promise.resolve(topLevel)
 		}
 		if (node instanceof Node) {

@@ -30,7 +30,7 @@ export function parseTestResult(line: string): (Result|string) {
 export class ResultTree {
     private _tests: Result[] = []
     private _root: Node = new Node
-    private _stdout: string[] = []
+    private _messages: string[] = []
 
     constructor(public readonly path?: string) {
     }
@@ -41,7 +41,7 @@ export class ResultTree {
             //. filter undefined
             .forEach(result => {
                 if (typeof result ==='string') {
-                    this._stdout.push(result)
+                    this._messages.push(result)
                 } else {
                     this.accept(result)
                 }
@@ -62,8 +62,12 @@ export class ResultTree {
         return this._tests
     }
 
-    public get stdout(): string[] {
-        return this._stdout
+    public get messages(): string[] {
+        return this._messages
+    }
+
+    public set errors(errors: string[]) {
+        Array.prototype.push.apply(this._messages,errors)
     }
 
     public get root(): Node {
