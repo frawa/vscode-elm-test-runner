@@ -137,12 +137,9 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 	}
 
 	select(labels: string[]) {
-		// this.editor.selection = new vscode.Selection(range.start, range.end);
-		// this.editor.revealRange(range)
+		let path = labels[0].replace('.','/')
 
-		vscode.commands.getCommands()
-
-		let testPath = `${this.tree.path}/tests/${labels[0]}.elm`
+		let testPath = `${this.tree.path}/tests/${path}.elm`
 		vscode.workspace.openTextDocument(testPath)
 		return vscode.workspace
 			.openTextDocument(testPath)
