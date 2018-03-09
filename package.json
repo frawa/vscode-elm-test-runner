@@ -23,7 +23,7 @@
             },
             {
                 "command": "elmTestRunner.run",
-                "title": "Run",
+                "title": "Run Elm Tests",
                 "icon": {
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"
