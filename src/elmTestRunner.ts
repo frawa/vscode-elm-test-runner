@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-// import { isNumber } from 'util';
 import { } from './elmTestResult';
 import { ResultTree, Node, Failure } from './elmTestResults';
 import { DiffProvider } from './diffProvider'
@@ -17,19 +16,8 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 
 	private tree: ResultTree = new ResultTree;
 	private _running: Boolean = false
-	// private text: string;
-	// private editor: vscode.TextEditor;
-
 
 	constructor(private context: vscode.ExtensionContext) {
-		// vscode.window.onDidChangeActiveTextEditor(() => this.onActiveEditorChanged());
-		// vscode.workspace.onDidChangeTextDocument(e => this.onDocumentChanged(e));
-		// this.parseTree();
-		// this.autoRefresh = vscode.workspace.getConfiguration('jsonOutline').get('autorefresh');
-		// vscode.workspace.onDidChangeConfiguration(() => {
-		// 	this.autoRefresh = vscode.workspace.getConfiguration('jsonOutline').get('autorefresh');
-		// });
-		// this.onActiveEditorChanged();
 		this.run()
 	}
 
@@ -78,7 +66,6 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 			if (node.result && node.result.failures.length > 0) {
 				return Promise.resolve(this.failuresToLines(node.result.failures))
 			}
-			console.log("FW", node, node.subs)
 			return Promise.resolve(node.subs)
 		}
 		return Promise.resolve([])
@@ -104,20 +91,6 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 			.forEach(failure => result = result.concat(failureToLines(failure)))
 		return result;
 	}
-
-
-
-	// private getChildrenOffsets(node: json.Node): number[] {
-	// 	const offsets: number[] = [];
-	// 	for (const child of node.children) {
-	// 		const childPath = json.getLocation(this.text, child.offset).path
-	// 		const childNode = json.findNodeAtLocation(this.tree, childPath);
-	// 		if (childNode) {
-	// 			offsets.push(childNode.offset);
-	// 		}
-	// 	}
-	// 	return offsets;
-	// }
 
 	getTreeItem(node: TreeNode): vscode.TreeItem {
 		let result = new vscode.TreeItem(this.getLabel(node), this.getState(node))

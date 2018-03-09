@@ -9,9 +9,6 @@ export class DiffProvider implements vscode.TextDocumentContentProvider {
 	constructor() {
 	}
 
-	// Provider method that takes an uri of the `references`-scheme and
-	// resolves its content by (1) running the reference search command
-	// and (2) formatting the results
 	provideTextDocumentContent(uri: vscode.Uri): string | Thenable<string> {
 		return this.decodeContent(uri);
 	}
