@@ -2,10 +2,10 @@
     "name": "vscode-elm-test-runner",
     "displayName": "elm-test-runner",
     "description": "Run elm tests",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "publisher": "vsce",
     "engines": {
-        "vscode": "^1.20.0"
+        "vscode": "^1.21.0"
     },
     "categories": [
         "Other"
@@ -25,13 +25,13 @@
                 }
             },
             {
-				"command": "elmTestRunner.diff",
-				"title": "Difference",
+                "command": "elmTestRunner.diff",
+                "title": "Difference",
                 "icon": {
                     "light": "resources/Red_x.svg",
                     "dark": "resources/Red_x.svg"
                 }
-			}
+            }
         ],
         "views": {
             "explorer": [
@@ -50,10 +50,11 @@
                 }
             ],
             "view/item/context": [
-				{
-					"command": "elmTestRunner.diff",
-					"when": "view == elmTestRunner && viewItem == canDiff"
-				}
+                {
+                    "command": "elmTestRunner.diff",
+                    "when": "view == elmTestRunner && viewItem == canDiff",
+                    "group": "inline"
+                }
             ]
         }
     },
@@ -69,15 +70,15 @@
     "devDependencies": {
         "@types/chai": "^4.1.2",
         "@types/mocha": "^2.2.42",
-        "@types/node": "^7.0.43",
+        "@types/node": "^7.0.56",
         "chai": "^4.1.2",
         "ts-mocha": "^1.1.0",
         "tslint": "^5.8.0",
         "typescript": "^2.6.1",
-        "vscode": "^1.1.6"
+        "vscode": "^1.1.13"
     },
     "dependencies": {
-        "@types/ramda": "^0.25.18",
+        "@types/ramda": "^0.25.19",
         "jsonc-parser": "^0.4.2",
         "ramda": "^0.25.0"
     }
