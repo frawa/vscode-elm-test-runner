@@ -78,8 +78,6 @@
         "vscode": "^1.1.13"
     },
     "dependencies": {
-        "@types/ramda": "^0.25.19",
-        "jsonc-parser": "^0.4.2",
-        "ramda": "^0.25.0"
+        "jsonc-parser": "^0.4.2"
     }
 }
