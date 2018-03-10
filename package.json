@@ -1,7 +1,11 @@
 {
     "name": "vscode-elm-test-runner",
     "displayName": "elm-test-runner",
-    "description": "Run elm tests",
+    "description": "Run elm testsin VS Code",
+    "repository": {
+        "type": "git",
+        "url": " https://github.com/frawa/vscode-elm-test-runner.git"
+    },
     "version": "0.0.2",
     "publisher": "vsce",
     "engines": {
