@@ -85,7 +85,7 @@ export class Node {
     }
 
     private add(labels: string[], result: Result): void {
-        if (labels.length == 0) {
+        if (labels.length === 0) {
             this.result = result
             return
         }
@@ -121,7 +121,7 @@ export class Node {
         return this.diff !== undefined
     }
 
-    public get diff(): [string, string]|undefined {
+    public get diff(): [string, string] | undefined {
         if (this.result) {
             if (this.result.failures.length > 0) {
                 let failure = this.result.failures[0]

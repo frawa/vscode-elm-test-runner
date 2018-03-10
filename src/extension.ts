@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         commandRegistrations,
         providerRegistration
-    );
+    )
 }
 
 export function deactivate() {
