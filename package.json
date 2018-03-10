@@ -28,8 +28,8 @@
                 "command": "elmTestRunner.diff",
                 "title": "Difference",
                 "icon": {
-                    "light": "resources/Red_x.svg",
-                    "dark": "resources/Red_x.svg"
+                    "light": "resources/light/compare-16.png",
+                    "dark": "resources/dark/compare-16.png"
                 }
             }
         ],
