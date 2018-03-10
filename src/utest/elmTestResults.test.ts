@@ -22,7 +22,6 @@ describe('Elm Test Results Tests', () => {
         })
         it('model', () => {
             let results = new ResultTree
-            expect(results).to.be.not.null
 
             let line = '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
             results.parse([line])
@@ -38,7 +37,6 @@ describe('Elm Test Results Tests', () => {
         })
 
         it('root', () => {
-            expect(root).to.be.not.null
             expect(root.name).to.eql('')
         })
 
@@ -92,7 +90,6 @@ describe('Elm Test Results Tests', () => {
             root.addResult(result)
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('suite')
-            expect(root.subs[0].result).to.be.undefined
             expect(root.subs[0].subs[0].name).to.eql('test')
             expect(root.subs[0].subs[0].result).to.equal(result)
         })
@@ -124,13 +121,11 @@ describe('Elm Test Results Tests', () => {
             root.addResult(result3)
             expect(root.subs).to.be.length(2)
             expect(root.subs[0].name).to.eql('suite')
-            expect(root.subs[0].result).to.be.undefined
             expect(root.subs[0].subs[0].name).to.eql('test')
             expect(root.subs[0].subs[0].result).to.equal(result)
             expect(root.subs[0].subs[1].name).to.eql('test3')
             expect(root.subs[0].subs[1].result).to.equal(result3)
             expect(root.subs[1].name).to.eql('suite2')
-            expect(root.subs[1].result).to.be.undefined
             expect(root.subs[1].subs[0].name).to.eql('test2')
             expect(root.subs[1].subs[0].result).to.equal(result2)
         })
@@ -146,7 +141,6 @@ describe('Elm Test Results Tests', () => {
             root.addResult(result)
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('test')
-            expect(root.subs[0].green).to.be.true
         })
 
         it('is not green', () => {
@@ -160,7 +154,6 @@ describe('Elm Test Results Tests', () => {
             root.addResult(result)
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('test')
-            expect(root.subs[0].green).to.be.false
         })
 
         it('is green deep', () => {
@@ -174,9 +167,7 @@ describe('Elm Test Results Tests', () => {
             root.addResult(result)
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('suite')
-            expect(root.subs[0].green).to.be.true
             expect(root.subs[0].subs[0].name).to.eql('test')
-            expect(root.subs[0].subs[0].green).to.be.true
         })
 
     })
