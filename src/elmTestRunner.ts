@@ -1,24 +1,22 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { } from './elmTestResult';
-import { ResultTree, Node, Failure } from './elmTestResults';
+import { ResultTree, Node } from './elmTestResults';
 import { DiffProvider } from './diffProvider'
 
 import * as child_process from 'child_process'
 
 
-type TreeNode = Node | string
-
-export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
+export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 	private _onDidChangeTreeData: vscode.EventEmitter<Node | null> = new vscode.EventEmitter<Node | null>();
 	readonly onDidChangeTreeData: vscode.Event<Node | null> = this._onDidChangeTreeData.event;
 
-	private tree: ResultTree = new ResultTree;
+	private tree: ResultTree = new ResultTree
 	private _running: Boolean = false
 
 	constructor(private context: vscode.ExtensionContext) {
-		this.run()
+		// this.run()
 	}
 
 	run(): void {
@@ -37,77 +35,44 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 			console.log(`stdout: ${data.toString()}`);
 			this.tree.parse(data.toString().split('\n'))
 			this._onDidChangeTreeData.fire();
-		});
+		})
 
 		elm.stderr.on('data', (data: string) => {
 			console.log(`stderr: ${data}`);
 			this.tree.errors = data.toString().split('\n')
 			this._onDidChangeTreeData.fire();
-		});
+		})
+
+		elm.on('error', (err) => {
+			console.log(`child prcess error ${err}`);
+			this._running = false
+			this._onDidChangeTreeData.fire();
+		})
 
 		elm.on('close', (code: number) => {
 			console.log(`child prcess exited with code ${code}`);
 			this._running = false
 			this._onDidChangeTreeData.fire();
-		});
+		})
 	}
 
-	getChildren(node?: TreeNode): Thenable<TreeNode[]> {
-		if (this._running) {
-			return Promise.resolve(["Running ..."])
+	getChildren(node?: Node): Thenable<Node[]> {
+		if (!node && this._running) {
+			return Promise.resolve([new Node("Running ...")])
 		}
 		if (!node) {
-			var topLevel: TreeNode[] = []
-			Array.prototype.push.apply(topLevel, this.tree.root.subs)
-			Array.prototype.push.apply(topLevel, this.tree.messages)
-			return Promise.resolve(topLevel)
+			return Promise.resolve(this.tree.root.subs)
 		}
-		if (node instanceof Node) {
-			if (node.result && node.result.failures.length > 0) {
-				return Promise.resolve(this.failuresToLines(node.result.failures))
-			}
-			return Promise.resolve(node.subs)
-		}
-		return Promise.resolve([])
+		return Promise.resolve(node.subs)
 	}
 
-	failuresToLines(failures: Failure[]): string[] {
-		let failureToLines = (failure: Failure) => {
-			let result: string[] = []
-			if (failure.message) {
-				result.push(failure.message)
-			}
-			if (failure.reason && failure.reason.data && (typeof failure.reason.data !== 'string')) {
-				let data = failure.reason.data
-				for (let key in data) {
-					result.push(`${key}: ${data[key]}`)
-				}
-			}
-			return result
-		}
-
-		let result: string[] = []
-		failures
-			.forEach(failure => result = result.concat(failureToLines(failure)))
-		return result;
-	}
-
-	getTreeItem(node: TreeNode): vscode.TreeItem {
+	getTreeItem(node: Node): vscode.TreeItem {
 		let result = new vscode.TreeItem(this.getLabel(node), this.getState(node))
 		result.iconPath = this.getIcon(node)
 
-		if (node instanceof Node && node.result) {
-			result.command = {
-				command: 'extension.openElmTestSelection',
-				title: '',
-				arguments: [node.result.labels]
-			}
-			if (node.canDiff) {
-				result.contextValue = 'canDiff'
-			}
-		} else if (typeof node === 'string') {
+		if (node.message) {
 			let firstFileInError = new RegExp("^.*?/tests/(.*?)\.elm")
-			let matches = firstFileInError.exec(node)
+			let matches = firstFileInError.exec(node.message)
 			if (matches) {
 				let label = matches[1].replace('/', '.')
 				result.command = {
@@ -116,21 +81,26 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 					arguments: [[label]]
 				}
 			}
+		} else if (node.result) {
+			result.command = {
+				command: 'extension.openElmTestSelection',
+				title: '',
+				arguments: [node.result.labels]
+			}
+			if (node.canDiff) {
+				result.contextValue = 'canDiff'
+			}
 		}
 		return result
 	}
 
-	private getState(node: TreeNode): vscode.TreeItemCollapsibleState {
-		if (node instanceof Node) {
-			if (node.subs.length > 0) {
-				return node.green
-					? vscode.TreeItemCollapsibleState.Collapsed
-					: vscode.TreeItemCollapsibleState.Expanded
-			} else if (node.result && node.result.failures.length > 0) {
-				return vscode.TreeItemCollapsibleState.Collapsed
-			}
+	private getState(node: Node): vscode.TreeItemCollapsibleState {
+		if (node.message) {
+			return vscode.TreeItemCollapsibleState.None
 		}
-		return vscode.TreeItemCollapsibleState.None
+		return node.green || node.result
+			? vscode.TreeItemCollapsibleState.Collapsed
+			: vscode.TreeItemCollapsibleState.Expanded
 	}
 
 	private testPath(file: string): string {
@@ -157,30 +127,29 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<TreeNode> {
 			})
 	}
 
-	private getIcon(node: TreeNode): any {
-		if (node instanceof Node) {
-			if (node.green) {
-				let green = this.context.asAbsolutePath(path.join('resources', 'Green_check.svg'))
-				return {
-					light: green,
-					dark: green
-				}
-			} else {
-				let red = this.context.asAbsolutePath(path.join('resources', 'Red_x.svg'))
-				return {
-					light: red,
-					dark: red
-				}
+	private getIcon(node: Node): any {
+		if (node.message) {
+			return null;
+		} else if (node.green) {
+			let green = this.context.asAbsolutePath(path.join('resources', 'Green_check.svg'))
+			return {
+				light: green,
+				dark: green
+			}
+		} else {
+			let red = this.context.asAbsolutePath(path.join('resources', 'Red_x.svg'))
+			return {
+				light: red,
+				dark: red
 			}
 		}
-		return null;
 	}
 
-	private getLabel(node: TreeNode): string {
-		if (node instanceof Node) {
-			return node.name
+	private getLabel(node: Node): string {
+		if (node.message) {
+			return node.message
 		}
-		return node
+		return node.name
 	}
 
 	diff(node: Node) {
