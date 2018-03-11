@@ -13,7 +13,6 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	readonly onDidChangeTreeData: vscode.Event<Node | null> = this._onDidChangeTreeData.event;
 
 	private tree: ResultTree = new ResultTree
-	private _running: Boolean = false
 
 	constructor(private context: vscode.ExtensionContext) {
 		this.run()
@@ -24,7 +23,6 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		let path = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath
 
 		this.tree = new ResultTree(path)
-		this._running = true
 		this._onDidChangeTreeData.fire();
 
 		const elm = child_process.spawn('elm', ['test', '--report', 'json'], {
@@ -45,21 +43,16 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 		elm.on('error', (err) => {
 			console.log(`child prcess error ${err}`);
-			this._running = false
+			this.tree.errors = [err.toString()]
 			this._onDidChangeTreeData.fire();
 		})
 
 		elm.on('close', (code: number) => {
 			console.log(`child prcess exited with code ${code}`);
-			this._running = false
-			this._onDidChangeTreeData.fire();
 		})
 	}
 
 	getChildren(node?: Node): Thenable<Node[]> {
-		if (!node && this._running) {
-			return Promise.resolve([new Node("Running ...")])
-		}
 		if (!node) {
 			return Promise.resolve(this.tree.root.subs)
 		}

@@ -72,6 +72,24 @@ describe('Result Tree Tests', () => {
             expect(tree.root.subs[2].message).to.eql(moreErrors[0])
             expect(tree.root.subs[3].message).to.eql(moreErrors[1])
         })
+
+        it('model runStart', () => {
+            let results = new ResultTree
+
+            let line = '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
+            results.parse([line])
+            expect(results.tests).to.be.of.length(1)
+            expect(results.root.message).to.be.undefined
+            expect(results.root.subs).to.be.of.length(1)
+
+            let line2 = '{"event":"runStart","testCount":"24","fuzzRuns":"100","paths":[],"initialSeed":"1646362476"}'
+            results.parse([line2])
+            expect(results.tests).to.be.of.length(0)
+            expect(results.root.subs).to.be.of.length(1)
+            expect(results.root.subs[0].message).to.eql('Running ...')
+        })
+
+
     })
 
     describe('test nodes', () => {
@@ -346,7 +364,7 @@ describe('Result Tree Tests', () => {
             expect(root.subs[0].subs[0].expanded).to.eql(false)
         })
 
-        
+
         it('collapsed green', () => {
             let result: Result = {
                 event: ''
