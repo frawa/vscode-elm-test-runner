@@ -16,7 +16,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	private _running: Boolean = false
 
 	constructor(private context: vscode.ExtensionContext) {
-		// this.run()
+		this.run()
 	}
 
 	run(): void {
@@ -70,16 +70,11 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		let result = new vscode.TreeItem(this.getLabel(node), this.getState(node))
 		result.iconPath = this.getIcon(node)
 
-		if (node.message) {
-			let firstFileInError = new RegExp("^.*?/tests/(.*?)\.elm")
-			let matches = firstFileInError.exec(node.message)
-			if (matches) {
-				let label = matches[1].replace('/', '.')
-				result.command = {
-					command: 'extension.openElmTestSelection',
-					title: '',
-					arguments: [[label]]
-				}
+		if (node.testModule) {
+			result.command = {
+				command: 'extension.openElmTestSelection',
+				title: '',
+				arguments: [[node.testModule]]
 			}
 		} else if (node.result) {
 			result.command = {
