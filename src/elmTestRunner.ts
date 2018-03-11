@@ -74,13 +74,13 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 			result.command = {
 				command: 'extension.openElmTestSelection',
 				title: '',
-				arguments: [[node.testModule]]
+				arguments: [node.testModule]
 			}
-		} else if (node.result) {
+		} else if (node.testModuleAndName) {
 			result.command = {
 				command: 'extension.openElmTestSelection',
 				title: '',
-				arguments: [node.result.labels]
+				arguments: node.testModuleAndName
 			}
 			if (node.canDiff) {
 				result.contextValue = 'canDiff'
@@ -98,18 +98,17 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 			: vscode.TreeItemCollapsibleState.Expanded
 	}
 
-	private testPath(file: string): string {
+	private testPath(module: string): string {
+		let file = module.replace('.','/')
 		return `${this.tree.path}/tests/${file}.elm`
 	}
 
-	select(labels: string[]) {
-		let path = labels[0].replace('.', '/')
-
-		vscode.workspace.openTextDocument(this.testPath(path))
+	select(module: string, testName?: string) {
+		vscode.workspace.openTextDocument(this.testPath(module))
 			.then(doc => vscode.window.showTextDocument(doc))
 			.then(editor => {
-				if (labels.length > 1) {
-					let description = '"' + labels[labels.length - 1] + '"'
+				if (testName) {
+					let description = '"' + testName + '"'
 					let offset = editor.document.getText().indexOf(description)
 					if (offset > -1) {
 						let pos0 = editor.document.positionAt(offset)

@@ -147,7 +147,6 @@ export class Node {
         return false
     }
 
-
     public get testModule(): string | undefined {
         if (this.message) {
             let firstFileInError = new RegExp("^.*?/tests/(.*?)\.elm")
@@ -155,6 +154,14 @@ export class Node {
             if (matches) {
                 return matches[1].replace('/', '.')
             }
+        }
+        return undefined
+    }
+
+    public get testModuleAndName(): [string, string] | undefined {
+        if (this.result) {
+            let labels = this.result.labels
+            return [labels[0], labels[labels.length - 1]]
         }
         return undefined
     }

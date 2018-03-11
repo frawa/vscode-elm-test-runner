@@ -260,5 +260,50 @@ describe('Result Tree Tests', () => {
                 'actual'
             ])
         })
+
+        it('test coordinates', () => {
+            let result: Result = {
+                event: ''
+                , status: 'pass'
+                , labels: ['Module.suite', 'test']
+                , failures: []
+                , duration: '0'
+            }
+            root.addResult(result)
+            expect(root.subs).to.be.length(1)
+            expect(root.subs[0].name).to.eql('Module.suite')
+            expect(root.subs[0].subs[0].name).to.eql('test')
+            
+            let coords = root.subs[0].subs[0].testModuleAndName
+            expect(coords).to.eql([
+                'Module.suite',
+                'test'
+            ])
+        })
+
+        it('deep test coordinates', () => {
+            let result: Result = {
+                event: ''
+                , status: 'pass'
+                , labels: ['Module.suite', 'nested', 'test']
+                , failures: []
+                , duration: '0'
+            }
+            root.addResult(result)
+            expect(root.subs).to.be.length(1)
+            expect(root.subs[0].name).to.eql('Module.suite')
+            expect(root.subs[0].subs[0].name).to.eql('nested')
+            expect(root.subs[0].subs[0].subs[0].name).to.eql('test')
+
+            let noCoords = root.subs[0].subs[0].testModuleAndName
+            expect(noCoords).to.be.undefined
+
+            let coords = root.subs[0].subs[0].subs[0].testModuleAndName
+            expect(coords).to.eql([
+                'Module.suite',
+                'test'
+            ])
+        })
+
     })
 })
