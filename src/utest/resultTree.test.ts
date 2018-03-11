@@ -2,9 +2,10 @@ import { expect } from 'chai';
 
 import { parseTestResult, ResultTree, Result, Node } from '../resultTree'
 
-describe('Elm Test Results Tests', () => {
+describe('Result Tree Tests', () => {
 
     describe('parse results', () => {
+
         it('one line', () => {
             let line = '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
             let result = parseTestResult(line)
@@ -18,18 +19,41 @@ describe('Elm Test Results Tests', () => {
             } else {
                 expect.fail("unexpected: "+result)
             }
-
         })
+
         it('model', () => {
             let results = new ResultTree
 
             let line = '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
             results.parse([line])
             expect(results.tests).to.be.of.length(1)
+            // expect(results.root).to.eql({})
+            expect(results.root.message).to.be.undefined
+            expect(results.root.subs).to.be.of.length(1)
+            expect(results.root.subs[0].name).to.eql('suite')
         })
+
+        it('a message', () => {
+            let line = 'a message'
+            let result = parseTestResult(line)
+            expect(result).to.eql(line)
+        })
+
+        it('model with message', () => {
+            let results = new ResultTree
+
+            let line = '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
+            let message = 'a message'
+            results.parse([line,message])
+            expect(results.tests).to.be.of.length(1)
+            // expect(results.root).to.eql({})
+            expect(results.root.subs).to.be.of.length(2)
+            expect(results.root.subs[1].message).to.eql(message)
+        })
+
     })
 
-    describe('node', () => {
+    describe('test nodes', () => {
         let root: Node = new Node
 
         beforeEach(() => {

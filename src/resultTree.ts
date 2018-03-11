@@ -35,7 +35,6 @@ export class ResultTree {
     parse(lines: string[]): void {
         lines
             .map(parseTestResult)
-            //. filter undefined
             .forEach(result => {
                 if (typeof result === 'string') {
                     this.message(result)
