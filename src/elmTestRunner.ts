@@ -93,13 +93,13 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		if (node.message) {
 			return vscode.TreeItemCollapsibleState.None
 		}
-		return node.green || node.result
-			? vscode.TreeItemCollapsibleState.Collapsed
-			: vscode.TreeItemCollapsibleState.Expanded
+		return node.expanded
+			? vscode.TreeItemCollapsibleState.Expanded
+			: vscode.TreeItemCollapsibleState.Collapsed
 	}
 
 	private testPath(module: string): string {
-		let file = module.replace('.','/')
+		let file = module.replace('.', '/')
 		return `${this.tree.path}/tests/${file}.elm`
 	}
 

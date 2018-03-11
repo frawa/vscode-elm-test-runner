@@ -273,7 +273,7 @@ describe('Result Tree Tests', () => {
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('Module.suite')
             expect(root.subs[0].subs[0].name).to.eql('test')
-            
+
             let coords = root.subs[0].subs[0].testModuleAndName
             expect(coords).to.eql([
                 'Module.suite',
@@ -305,5 +305,66 @@ describe('Result Tree Tests', () => {
             ])
         })
 
+        it('expanded red parent', () => {
+            let result: Result = {
+                event: ''
+                , status: 'fail'
+                , labels: ['suite', 'test']
+                , failures: [{
+                    message: 'diffable failure',
+                    reason: {
+                        data: 'failure message'
+                    }
+                }]
+                , duration: '0'
+            }
+            root.addResult(result)
+            expect(root.subs).to.be.length(1)
+            expect(root.subs[0].name).to.eql('suite')
+            expect(root.subs[0].green).to.eql(false)
+            expect(root.subs[0].expanded).to.eql(true)
+            expect(root.subs[0].subs[0].name).to.eql('test')
+            expect(root.subs[0].subs[0].green).to.eql(false)
+            expect(root.subs[0].subs[0].expanded).to.eql(false)
+        })
+
+        it('collapsed red leaf', () => {
+            let result: Result = {
+                event: ''
+                , status: 'fail'
+                , labels: ['suite', 'test']
+                , failures: []
+                , duration: '0'
+            }
+            root.addResult(result)
+            expect(root.subs).to.be.length(1)
+            expect(root.subs[0].name).to.eql('suite')
+            expect(root.subs[0].green).to.eql(false)
+            expect(root.subs[0].expanded).to.eql(true)
+            expect(root.subs[0].subs[0].name).to.eql('test')
+            expect(root.subs[0].subs[0].green).to.eql(false)
+            expect(root.subs[0].subs[0].expanded).to.eql(false)
+        })
+
+        
+        it('collapsed green', () => {
+            let result: Result = {
+                event: ''
+                , status: 'pass'
+                , labels: ['test']
+                , failures: []
+                , duration: '0'
+            }
+            root.addResult(result)
+            expect(root.subs).to.be.length(1)
+            expect(root.subs[0].name).to.eql('test')
+            expect(root.subs[0].green).to.eql(true)
+            expect(root.subs[0].expanded).to.eql(false)
+        })
+
+        it('flat message', () => {
+            root.message = "a message"
+            expect(root.expanded).to.eql(undefined)
+        })
     })
 })

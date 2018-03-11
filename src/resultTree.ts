@@ -183,4 +183,11 @@ export class Node {
         }
         return undefined
     }
+
+    public get expanded(): boolean | undefined {
+        if (this.message) {
+            return undefined
+        }
+        return !this.green && !this.result
+    }
 }
