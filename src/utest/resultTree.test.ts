@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import { parseTestResult, ResultTree, Result, Node } from '../elmTestResults'
+import { parseTestResult, ResultTree, Result, Node } from '../resultTree'
 
 describe('Elm Test Results Tests', () => {
 

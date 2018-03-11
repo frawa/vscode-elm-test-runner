@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { } from './elmTestResult';
-import { ResultTree, Node } from './elmTestResults';
+import { ResultTree, Node } from './resultTree';
 import { DiffProvider } from './diffProvider'
 
 import * as child_process from 'child_process'
