@@ -167,8 +167,7 @@ export class Node {
         if (this.result) {
             if (this.result.failures.length > 0) {
                 let failure = this.result.failures[0]
-                if (failure.reason
-                    && failure.reason.data
+                if (failure.reason.data
                     && (typeof failure.reason.data !== 'string')) {
                     let data = failure.reason.data
                     return [data.expected, data.actual]
