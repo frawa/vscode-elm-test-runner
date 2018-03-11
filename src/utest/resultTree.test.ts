@@ -215,5 +215,10 @@ describe('Result Tree Tests', () => {
             expect(root.subs[0].subs[0].name).to.eql('test')
         })
 
+        it('test module file in message', () => {
+            let node = new Node('message with file blabla/tests/Module/File.elm')
+            let module = node.testModule
+            expect(module).to.eql('Module.File')
+        })
     })
 })

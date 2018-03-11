@@ -44,7 +44,7 @@ export class ResultTree {
             })
     }
 
-    message(message: string):void {
+    message(message: string): void {
         if (!message) {
             return;
         }
@@ -119,23 +119,23 @@ export class Node {
     }
 
     private addFailures(failures: Failure[]) {
-		let failureNodes = (acc: Node[], failure: Failure) => {
-			if (failure.message) {
-				acc.push(new Node(failure.message))
-			}
-			if (failure.reason && failure.reason.data && (typeof failure.reason.data !== 'string')) {
-				let data = failure.reason.data
-				for (let key in data) {
-					acc.push(new Node(`${key}: ${data[key]}`))
-				}
-			}
-			return acc
-		}
+        let failureNodes = (acc: Node[], failure: Failure) => {
+            if (failure.message) {
+                acc.push(new Node(failure.message))
+            }
+            if (failure.reason && failure.reason.data && (typeof failure.reason.data !== 'string')) {
+                let data = failure.reason.data
+                for (let key in data) {
+                    acc.push(new Node(`${key}: ${data[key]}`))
+                }
+            }
+            return acc
+        }
 
         failures
-            .reduce(failureNodes,[])
+            .reduce(failureNodes, [])
             .forEach(node => this.addChild(node))
-	}
+    }
 
     public get green(): boolean {
         if (this.result) {
@@ -145,6 +145,18 @@ export class Node {
             return this.subs.every(sub => sub.green)
         }
         return false
+    }
+
+
+    public get testModule(): string | undefined {
+        if (this.message) {
+            let firstFileInError = new RegExp("^.*?/tests/(.*?)\.elm")
+            let matches = firstFileInError.exec(this.message)
+            if (matches) {
+                return matches[1].replace('/', '.')
+            }
+        }
+        return undefined
     }
 
     public get canDiff(): boolean {
