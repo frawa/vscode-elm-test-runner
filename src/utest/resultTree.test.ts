@@ -17,7 +17,7 @@ describe('Result Tree Tests', () => {
                 expect(result.failures).to.eql([])
                 expect(result.duration).to.eql('13')
             } else {
-                expect.fail("unexpected: "+result)
+                expect.fail("unexpected: " + result)
             }
         })
 
@@ -44,13 +44,34 @@ describe('Result Tree Tests', () => {
 
             let line = '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
             let message = 'a message'
-            results.parse([line,message])
+            results.parse([line, message])
             expect(results.tests).to.be.of.length(1)
             // expect(results.root).to.eql({})
             expect(results.root.subs).to.be.of.length(2)
             expect(results.root.subs[1].message).to.eql(message)
         })
 
+        it('with errors', () => {
+            let errors = ['an error', 'another error']
+            let tree = new ResultTree
+            tree.errors = errors
+            expect(tree.root.subs).to.be.of.length(2)
+            expect(tree.root.subs[0].message).to.eql(errors[0])
+            expect(tree.root.subs[1].message).to.eql(errors[1])
+        })
+
+        it('with more errors', () => {
+            let errors = ['an error', 'another error']
+            let tree = new ResultTree
+            tree.errors = errors
+            let moreErrors = ['yet another error', 'give up']
+            tree.errors = moreErrors
+            expect(tree.root.subs).to.be.of.length(4)
+            expect(tree.root.subs[0].message).to.eql(errors[0])
+            expect(tree.root.subs[1].message).to.eql(errors[1])
+            expect(tree.root.subs[2].message).to.eql(moreErrors[0])
+            expect(tree.root.subs[3].message).to.eql(moreErrors[1])
+        })
     })
 
     describe('test nodes', () => {
