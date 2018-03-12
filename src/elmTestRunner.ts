@@ -63,13 +63,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		let result = new vscode.TreeItem(this.getLabel(node), this.getState(node))
 		result.iconPath = this.getIcon(node)
 
-		if (node.testModule) {
-			result.command = {
-				command: 'extension.openElmTestSelection',
-				title: '',
-				arguments: [node.testModule]
-			}
-		} else if (node.testModuleAndName) {
+		if (node.testModuleAndName) {
 			result.command = {
 				command: 'extension.openElmTestSelection',
 				title: '',
@@ -77,6 +71,12 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 			}
 			if (node.canDiff) {
 				result.contextValue = 'canDiff'
+			}
+		} else if (node.testModule) {
+			result.command = {
+				command: 'extension.openElmTestSelection',
+				title: '',
+				arguments: [node.testModule]
 			}
 		}
 		return result

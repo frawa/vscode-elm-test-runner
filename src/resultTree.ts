@@ -101,6 +101,7 @@ export class Node {
     subs: Node[] = []
     result?: Result
     message?: string
+    private parent?: Node
 
     constructor(message?: string) {
         this.message = message
@@ -114,6 +115,7 @@ export class Node {
 
     addChild(child: Node): void {
         this.subs.push(child)
+        child.parent = this
     }
 
     private add(labels: string[], result: Result): void {
@@ -135,7 +137,7 @@ export class Node {
         if (!found) {
             var newNode: Node = new Node
             newNode.name = name || ''
-            this.subs.push(newNode)
+            this.addChild(newNode)
             newNode.add(labels, result)
         }
     }
@@ -176,8 +178,22 @@ export class Node {
             if (matches) {
                 return matches[1].replace('/', '.')
             }
+        } else {
+            let moduleNode = Node.getParentUnderRoot(this)
+            if (moduleNode) {
+                return moduleNode.name
+            }
         }
         return undefined
+    }
+
+    private static getParentUnderRoot(node: Node): Node | undefined {
+        if (!node || !node.parent) {
+            return undefined;
+        }
+        return !node.parent.parent
+            ? node
+            : this.getParentUnderRoot(node.parent)
     }
 
     public get testModuleAndName(): [string, string] | undefined {
@@ -185,7 +201,9 @@ export class Node {
             let labels = this.result.labels
             return [labels[0], labels[labels.length - 1]]
         }
-        return undefined
+        let module = this.testModule
+        let name = this.name.length > 0 ? this.name : undefined
+        return module && name ? [module, name] : undefined
     }
 
     public get canDiff(): boolean {
