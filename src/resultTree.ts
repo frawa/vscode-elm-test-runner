@@ -36,13 +36,13 @@ export class ResultTree {
         }
     }
 
-    private get running(): boolean {
+    private isRunning(): boolean {
         return this._root.subs.length === 1
             && this._root.subs[0] === this._running
     }
 
     private set running(running: boolean) {
-        if (this.running !== running) {
+        if (this.isRunning() !== running) {
             if (running) {
                 this._tests = []
                 this._root.subs = [this._running]
