@@ -83,7 +83,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	}
 
 	private getState(node: Node): vscode.TreeItemCollapsibleState {
-		if (node.message) {
+		if (node.expanded === undefined) {
 			return vscode.TreeItemCollapsibleState.None
 		}
 		return node.expanded

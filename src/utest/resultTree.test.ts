@@ -364,8 +364,7 @@ describe('Result Tree Tests', () => {
             expect(root.subs[0].subs[0].expanded).to.eql(false)
         })
 
-
-        it('collapsed green', () => {
+        it('collapsed green leaf', () => {
             let result: Result = {
                 event: ''
                 , status: 'pass'
@@ -376,6 +375,21 @@ describe('Result Tree Tests', () => {
             root.addResult(result)
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('test')
+            expect(root.subs[0].green).to.eql(true)
+            expect(root.subs[0].expanded).to.eql(undefined)
+        })
+
+        it('expanded green parent', () => {
+            let result: Result = {
+                event: ''
+                , status: 'pass'
+                , labels: ['suite', 'test']
+                , failures: []
+                , duration: '0'
+            }
+            root.addResult(result)
+            expect(root.subs).to.be.length(1)
+            expect(root.subs[0].name).to.eql('suite')
             expect(root.subs[0].green).to.eql(true)
             expect(root.subs[0].expanded).to.eql(false)
         })

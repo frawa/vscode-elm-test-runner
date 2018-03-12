@@ -210,6 +210,11 @@ export class Node {
         if (this.message) {
             return undefined
         }
-        return !this.green && !this.result
+        let hasSubs = this.subs.length > 0
+        if (this.green) {
+            return hasSubs ? false : undefined
+        }
+        let isRedLeaf = this.result !== undefined
+        return !isRedLeaf
     }
 }
