@@ -31,11 +31,13 @@ export class ResultTree {
     private _running: Node = new Node('Running ...')
 
     constructor(public readonly path?: string) {
-        this.running = true
+        if (path) {
+            this.running = true
+        }
     }
 
     private get running(): boolean {
-        return this._root.subs.length == 1
+        return this._root.subs.length === 1
             && this._root.subs[0] === this._running
     }
 
@@ -45,7 +47,7 @@ export class ResultTree {
                 this._tests = []
                 this._root.subs = [this._running]
             } else {
-                this._root.subs = []
+                this._root = new Node()
             }
         }
     }
@@ -66,7 +68,6 @@ export class ResultTree {
         if (!message) {
             return;
         }
-        this.running = false
         this._root.addChild(new Node(message))
     }
 
@@ -74,12 +75,13 @@ export class ResultTree {
         if (!result) {
             return;
         }
-        this._tests.push(result)
         if (result.event === 'testCompleted') {
-            this.running = false
             this._root.addResult(result)
+            this._tests.push(result)
         } else if (result.event === 'runStart') {
             this.running = true
+        } else if (result.event === 'runComplete') {
+            this.running = false
         }
     }
 

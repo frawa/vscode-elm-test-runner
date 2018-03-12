@@ -22,10 +22,18 @@
         "commands": [
             {
                 "command": "elmTestRunner.run",
-                "title": "Run Elm Tests",
+                "title": "Run/Watch Elm Tests",
                 "icon": {
-                    "light": "resources/light/refresh.svg",
-                    "dark": "resources/dark/refresh.svg"
+                    "light": "resources/light/play-7-16.png",
+                    "dark": "resources/dark/play-7-16.png"
+                }
+            },
+            {
+                "command": "elmTestRunner.stop",
+                "title": "Stop watching Elm Tests",
+                "icon": {
+                    "light": "resources/light/eject-16.png",
+                    "dark": "resources/dark/eject-16.png"
                 }
             },
             {
@@ -49,6 +57,11 @@
             "view/title": [
                 {
                     "command": "elmTestRunner.run",
+                    "when": "view == elmTestRunner",
+                    "group": "navigation"
+                },
+                {
+                    "command": "elmTestRunner.stop",
                     "when": "view == elmTestRunner",
                     "group": "navigation"
                 }

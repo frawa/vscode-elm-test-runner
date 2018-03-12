@@ -17,6 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const commandRegistrations = vscode.Disposable.from(
         vscode.commands.registerCommand('elmTestRunner.run', () => elmTestsProvider.run()),
+        vscode.commands.registerCommand('elmTestRunner.stop', () => elmTestsProvider.stop()),
         vscode.commands.registerCommand('elmTestRunner.diff', node => elmTestsProvider.diff(node)),
         vscode.commands.registerCommand('extension.openElmTestSelection', (module,testName) => elmTestsProvider.select(module,testName))
     )

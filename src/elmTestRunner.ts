@@ -13,21 +13,31 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	readonly onDidChangeTreeData: vscode.Event<Node | null> = this._onDidChangeTreeData.event;
 
 	private tree: ResultTree = new ResultTree
+	private process?: child_process.ChildProcess
 
 	constructor(private context: vscode.ExtensionContext) {
 		this.run()
 	}
 
+	stop(): void {
+		if (this.process) {
+			this.process.kill()
+		}
+	}
 	run(): void {
+		if (this.process) {
+			return
+		}
 		// TODO support multiple workspaces
 		let path = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath
 
 		this.tree = new ResultTree(path)
 		this._onDidChangeTreeData.fire();
 
-		const elm = child_process.spawn('elm', ['test', '--report', 'json'], {
+		let elm = child_process.spawn('elm', ['test', '--report', 'json', '--watch'], {
 			cwd: this.tree.path
 		})
+		this.process = elm;
 
 		elm.stdout.on('data', (data: string) => {
 			console.log(`stdout: ${data.toString()}`);
@@ -36,19 +46,29 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		})
 
 		elm.stderr.on('data', (data: string) => {
-			console.log(`stderr: ${data}`);
+			console.log(`stderr: ${data}`)
 			this.tree.errors = data.toString().split('\n')
-			this._onDidChangeTreeData.fire();
+			this._onDidChangeTreeData.fire()
 		})
 
 		elm.on('error', (err) => {
-			console.log(`child prcess error ${err}`);
+			console.log(`child prcess error ${err}`)
 			this.tree.errors = [err.toString()]
-			this._onDidChangeTreeData.fire();
+			this._onDidChangeTreeData.fire()
 		})
 
 		elm.on('close', (code: number) => {
+			console.log(`child prcess closed with code ${code}`);
+			this.process = undefined
+			this.tree = new ResultTree()
+			this._onDidChangeTreeData.fire()
+		})
+
+		elm.on('exit', (code: number) => {
 			console.log(`child prcess exited with code ${code}`);
+			this.process = undefined
+			this.tree = new ResultTree()
+			this._onDidChangeTreeData.fire()
 		})
 	}
 
