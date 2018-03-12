@@ -28,7 +28,7 @@ export function parseTestResult(line: string): (Result | string) {
 export class ResultTree {
     private _tests: Result[] = []
     private _root: Node = new Node
-    private _running: Node = new Node('Running ...')
+    private readonly _running: string = "Running ..."
 
     constructor(public readonly path?: string) {
         if (path) {
@@ -37,17 +37,17 @@ export class ResultTree {
     }
 
     private isRunning(): boolean {
-        return this._root.subs.length === 1
-            && this._root.subs[0] === this._running
+        return this._root.subs.length > 0
+            && this._root.subs[0].message === this._running
     }
 
     private set running(running: boolean) {
         if (this.isRunning() !== running) {
             if (running) {
                 this._tests = []
-                this._root.subs = [this._running]
+                this._root.subs = [new Node(this._running)]
             } else {
-                this._root = new Node()
+                this._root.subs.shift()
             }
         }
     }
