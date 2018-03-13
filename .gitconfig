@@ -1,0 +1,19 @@
+# Use this configuration!
+#
+# git config --local include.path ../.gitconfig
+# git config --local -l
+
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+	precomposeunicode = true
+[remote "origin"]
+	url = https://github.com/frawa/vscode-elm-test-runner.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "zero"]
+	remote = origin
+	merge = refs/heads/zero
+[branch]
+	autosetuprebase = always
