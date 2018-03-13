@@ -279,6 +279,32 @@ describe('Result Tree Tests', () => {
             ])
         })
 
+        it('diff sting value', () => {
+            let result: Result = {
+                event: ''
+                , status: 'pass'
+                , labels: ['test']
+                , failures: [{
+                    message: 'diffable failure',
+                    reason: {
+                        data: {
+                            actual: '"actual\\nvalue"',
+                            expected: '"expected"'
+                        }
+                    }
+                }]
+                , duration: '0'
+            }
+            root.addResult(result)
+            expect(root.subs).to.be.length(1)
+            expect(root.subs[0].name).to.eql('test')
+            expect(root.subs[0].canDiff).to.true
+            expect(root.subs[0].diff).to.eql([
+                'expected',
+                'actual\nvalue'
+            ])
+        })
+
         it('test coordinates', () => {
             let result: Result = {
                 event: ''

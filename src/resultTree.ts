@@ -219,7 +219,7 @@ export class Node {
                 if (failure.reason.data
                     && (typeof failure.reason.data !== 'string')) {
                     let data = failure.reason.data
-                    return [data.expected, data.actual]
+                    return [evalStringLiteral(data.expected), evalStringLiteral(data.actual)]
                 }
             }
         }
@@ -237,4 +237,11 @@ export class Node {
         let isRedLeaf = this.result !== undefined
         return !isRedLeaf
     }
+}
+
+function evalStringLiteral(value: string):string {
+    if (value && value.startsWith('"')) {
+        return eval(value)
+    }
+    return value
 }
