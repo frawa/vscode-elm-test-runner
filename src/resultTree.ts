@@ -241,7 +241,7 @@ export class Node {
 
 function evalStringLiteral(value: string):string {
     if (value && value.startsWith('"')) {
-        return eval(value)
+        return eval(value).toString()
     }
     return value
 }
