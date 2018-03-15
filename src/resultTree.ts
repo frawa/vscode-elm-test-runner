@@ -27,8 +27,9 @@ export function parseTestResult(line: string): (Result | string) {
 
 export class ResultTree {
     private _tests: Result[] = []
-    private _root: Node = new Node
+    private _root: Node = new Node('')
     private readonly _running: string = "Running ..."
+    private _pendingMessages: string[] = []
 
     constructor(public readonly path?: string) {
         if (path) {
@@ -36,9 +37,9 @@ export class ResultTree {
         }
     }
 
-    private isRunning(): boolean {
+    isRunning(): boolean {
         return this._root.subs.length > 0
-            && this._root.subs[0].message === this._running
+            && this._root.subs[0].name === this._running
     }
 
     private set running(running: boolean) {
@@ -48,6 +49,10 @@ export class ResultTree {
                 this._root.subs = [new Node(this._running)]
             } else {
                 this._root.subs.shift()
+                let dangeling = this.popMessages()
+                if (dangeling.length > 0) {
+                    this._root.subs.push(new Node('Mesages', dangeling))
+                }
             }
         }
     }
@@ -57,18 +62,24 @@ export class ResultTree {
             .map(parseTestResult)
             .forEach(result => {
                 if (typeof result === 'string') {
-                    this.message(result)
+                    this.pushMessage(result)
                 } else {
                     this.accept(result)
                 }
             })
     }
 
-    message(message: string): void {
+    private pushMessage(message: string): void {
         if (!message) {
             return;
         }
-        this._root.addChild(new Node(message))
+        this._pendingMessages.push(message)
+    }
+
+    private popMessages(): string[] {
+        let result = this._pendingMessages
+        this._pendingMessages = []
+        return result
     }
 
     accept(result: Result): void {
@@ -76,7 +87,7 @@ export class ResultTree {
             return;
         }
         if (result.event === 'testCompleted') {
-            this._root.addResult(result)
+            this._root.addResult(result, this.popMessages())
             this._tests.push(result)
         } else if (result.event === 'runStart') {
             this.running = true
@@ -90,7 +101,7 @@ export class ResultTree {
     }
 
     public set errors(errors: string[]) {
-        errors.forEach(err => this.message(err))
+        errors.forEach(err => this.pushMessage("! " + err))
     }
 
     public get root(): Node {
@@ -99,20 +110,21 @@ export class ResultTree {
 }
 
 export class Node {
-    name: string = ''
     subs: Node[] = []
     result?: Result
-    message?: string
+    private _messages: string[] = []
     private parent?: Node
 
-    constructor(message?: string) {
-        this.message = message
+    constructor(public name: string, messages?: string[]) {
+        if (messages) {
+            this.addMessages(messages)
+        }
     }
 
-    addResult(result: Result): void {
+    addResult(result: Result, messages: string[]): void {
         let labels: string[] = []
         labels = labels.concat(result.labels)
-        this.add(labels, result)
+        this.add(labels, result).addMessages(messages)
     }
 
     addChild(child: Node): void {
@@ -120,47 +132,61 @@ export class Node {
         child.parent = this
     }
 
-    private add(labels: string[], result: Result): void {
+    private get path(): string[] {
+        if (this.parent) {
+            return this.parent.path.concat(this.name)
+        }
+        return [this.name]
+    }
+
+    private addMessages(messages: string[]): void {
+        this._messages = this._messages.concat(messages)
+    }
+
+    get messages(): string[] {
+        let messages = this._messages.length > 0
+            ? ['--- ' + this.path.join(' / ')].concat(this._messages)
+            : this._messages
+        return this.subs.reduce((acc, sub) => {
+            return acc.concat(sub.messages)
+        }, messages)
+    }
+
+    private add(labels: string[], result: Result): Node {
         if (labels.length === 0) {
             this.result = result
             this.addFailures(result.failures)
-            return
+            return this
         }
         let name = labels.shift()
 
-        let found = false
-        this.subs.forEach(sub => {
-            if (sub.name === name) {
-                sub.add(labels, result)
-                found = true
-            }
-        })
-
-        if (!found) {
-            var newNode: Node = new Node
-            newNode.name = name || ''
-            this.addChild(newNode)
-            newNode.add(labels, result)
+        let found = this.subs.find(sub => sub.name === name)
+        if (found) {
+            return found.add(labels, result)
         }
+
+        var newNode: Node = new Node(name || '')
+        this.addChild(newNode)
+        return newNode.add(labels, result)
     }
 
     private addFailures(failures: Failure[]) {
-        let failureNodes = (acc: Node[], failure: Failure) => {
+        let failureLines = (acc: string[], failure: Failure) => {
             if (failure.message) {
-                acc.push(new Node(failure.message))
+                acc.push(failure.message)
             }
             if (failure.reason && failure.reason.data && (typeof failure.reason.data !== 'string')) {
                 let data = failure.reason.data
                 for (let key in data) {
-                    acc.push(new Node(`${key}: ${data[key]}`))
+                    acc.push(`${key}: ${data[key]}`)
                 }
             }
             return acc
         }
 
-        failures
-            .reduce(failureNodes, [])
-            .forEach(node => this.addChild(node))
+        let lines = failures
+            .reduce(failureLines, [])
+        this.addMessages(lines)
     }
 
     public get green(): boolean {
@@ -174,12 +200,16 @@ export class Node {
     }
 
     public get testModule(): string | undefined {
-        if (this.message) {
+        let modules = this._messages.map(message => {
             let firstFileInError = new RegExp("^.*?/tests/(.*?)\.elm")
-            let matches = firstFileInError.exec(this.message)
+            let matches = firstFileInError.exec(message)
             if (matches) {
                 return matches[1].replace('/', '.')
             }
+            return undefined
+        })
+        if (modules.length > 0) {
+            return modules[0]
         } else {
             let moduleNode = Node.getParentUnderRoot(this)
             if (moduleNode) {
@@ -227,19 +257,14 @@ export class Node {
     }
 
     public get expanded(): boolean | undefined {
-        if (this.message) {
+        if (this.subs.length === 0) {
             return undefined
         }
-        let hasSubs = this.subs.length > 0
-        if (this.green) {
-            return hasSubs ? false : undefined
-        }
-        let isRedLeaf = this.result !== undefined
-        return !isRedLeaf
+        return !this.green
     }
 }
 
-function evalStringLiteral(value: string):string {
+function evalStringLiteral(value: string): string {
     if (value && value.startsWith('"')) {
         return eval(value).toString()
     }

@@ -15,15 +15,38 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	private tree: ResultTree = new ResultTree
 	private process?: child_process.ChildProcess
 
-	constructor(private context: vscode.ExtensionContext) {
+	constructor(private context: vscode.ExtensionContext, private outputChannel: vscode.OutputChannel) {
 		this.run()
+	}
+
+	private out(lines: string[]): void {
+		lines.forEach(line => this.outputChannel.appendLine(line))
+		this.outputChannel.show(true)
+	}
+
+	private replaceOut(lines: string[]): void {
+		if (lines.length > 0) {
+			this.outputChannel.clear()
+			this.out(lines)
+		}
 	}
 
 	stop(): void {
 		if (this.process) {
+			console.log(`stopping ...`)
+			this.out(['STOP|'])
 			this.process.kill()
+			this.process = undefined
 		}
 	}
+
+	private restart(): void {
+		this.stop()
+		console.log(`restarting (after crash?) ...`)
+		this.out(['RESTART|'])
+		setTimeout(() => this.run(), 1000)
+	}
+
 	run(): void {
 		if (this.process) {
 			return
@@ -40,35 +63,44 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		this.process = elm;
 
 		elm.stdout.on('data', (data: string) => {
-			console.log(`stdout: ${data.toString()}`);
-			this.tree.parse(data.toString().split('\n'))
+			let lines = data.toString().split('\n')
+			console.log(`stdout: ${lines}`);
+			this.tree.parse(lines)
 			this._onDidChangeTreeData.fire();
 		})
 
 		elm.stderr.on('data', (data: string) => {
 			console.log(`stderr: ${data}`)
-			this.tree.errors = data.toString().split('\n')
+			let lines = data.toString().split('\n')
+			this.tree.errors = lines
+			this.out(lines)
 			this._onDidChangeTreeData.fire()
 		})
 
 		elm.on('error', (err) => {
-			console.log(`child prcess error ${err}`)
-			this.tree.errors = [err.toString()]
+			let line = err.toString()
+			console.log(`child prcess error ${line}`)
+			this.tree.errors = [line]
+			this.out(['ERROR| ' + line])
 			this._onDidChangeTreeData.fire()
 		})
 
 		elm.on('close', (code: number) => {
 			console.log(`child prcess closed with code ${code}`);
-			this.process = undefined
+			this.stop()
+			this.out(['CLOSE| ' + code])
 			this.tree = new ResultTree()
 			this._onDidChangeTreeData.fire()
 		})
 
 		elm.on('exit', (code: number) => {
 			console.log(`child prcess exited with code ${code}`);
-			this.process = undefined
+			this.out(['EXIT| ' + code])
 			this.tree = new ResultTree()
 			this._onDidChangeTreeData.fire()
+			if (code !== null) {
+				this.restart()
+			}
 		})
 	}
 
@@ -84,10 +116,11 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		result.iconPath = this.getIcon(node)
 
 		if (node.testModuleAndName) {
+			let [module, testName] = node.testModuleAndName
 			result.command = {
 				command: 'extension.openElmTestSelection',
 				title: '',
-				arguments: node.testModuleAndName
+				arguments: [node.messages, module, testName]
 			}
 			if (node.canDiff) {
 				result.contextValue = 'canDiff'
@@ -96,7 +129,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 			result.command = {
 				command: 'extension.openElmTestSelection',
 				title: '',
-				arguments: [node.testModule]
+				arguments: [node.messages, node.testModule]
 			}
 		}
 		return result
@@ -116,7 +149,8 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		return `${this.tree.path}/tests/${file}.elm`
 	}
 
-	select(module: string, testName?: string) {
+	select(messages: string[], module: string, testName?: string) {
+		this.replaceOut(messages)
 		vscode.workspace.openTextDocument(this.testPath(module))
 			.then(doc => vscode.window.showTextDocument(doc))
 			.then(editor => {
@@ -135,27 +169,19 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	}
 
 	private getIcon(node: Node): any {
-		if (node.message) {
-			return null;
-		} else if (node.green) {
-			let green = this.context.asAbsolutePath(path.join('resources', 'Green_check.svg'))
-			return {
-				light: green,
-				dark: green
-			}
-		} else {
-			let red = this.context.asAbsolutePath(path.join('resources', 'Red_x.svg'))
-			return {
-				light: red,
-				dark: red
-			}
+		if (this.tree.isRunning()) {
+			return null
+		}
+		let icon = node.green
+			? this.context.asAbsolutePath(path.join('resources', 'Green_check.svg'))
+			: this.context.asAbsolutePath(path.join('resources', 'Red_x.svg'))
+		return {
+			light: icon,
+			dark: icon
 		}
 	}
 
 	private getLabel(node: Node): string {
-		if (node.message) {
-			return node.message
-		}
 		return node.name
 	}
 

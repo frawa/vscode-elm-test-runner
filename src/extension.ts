@@ -12,19 +12,21 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.workspace.registerTextDocumentContentProvider(DiffProvider.scheme, diffProvider),
     )
 
-    const elmTestsProvider = new ElmTestsProvider(context)
+    const outputChannel = vscode.window.createOutputChannel('Elm Test Runner')
+    const elmTestsProvider = new ElmTestsProvider(context, outputChannel)
     vscode.window.registerTreeDataProvider('elmTestRunner', elmTestsProvider)
 
     const commandRegistrations = vscode.Disposable.from(
         vscode.commands.registerCommand('elmTestRunner.run', () => elmTestsProvider.run()),
         vscode.commands.registerCommand('elmTestRunner.stop', () => elmTestsProvider.stop()),
         vscode.commands.registerCommand('elmTestRunner.diff', node => elmTestsProvider.diff(node)),
-        vscode.commands.registerCommand('extension.openElmTestSelection', (module,testName) => elmTestsProvider.select(module,testName))
+        vscode.commands.registerCommand('extension.openElmTestSelection', (messages, module, testName) => elmTestsProvider.select(messages, module, testName))
     )
 
     context.subscriptions.push(
         commandRegistrations,
         providerRegistration
+        // outputChannel
     )
 }
 

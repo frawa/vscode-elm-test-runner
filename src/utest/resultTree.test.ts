@@ -6,6 +6,14 @@ describe('Result Tree Tests', () => {
 
     describe('parse results', () => {
 
+        let emptyResult = {
+            event: ""
+            , status: ""
+            , labels: []
+            , failures: []
+            , duration: ""
+        }
+
         it('one line', () => {
             let line = '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
             let result = parseTestResult(line)
@@ -28,7 +36,6 @@ describe('Result Tree Tests', () => {
             results.parse([line])
             expect(results.tests).to.be.of.length(1)
             // expect(results.root).to.eql({})
-            expect(results.root.message).to.be.undefined
             expect(results.root.subs).to.be.of.length(1)
             expect(results.root.subs[0].name).to.eql('suite')
         })
@@ -44,20 +51,20 @@ describe('Result Tree Tests', () => {
 
             let line = '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
             let message = 'a message'
-            results.parse([line, message])
+            results.parse([message, line])
             expect(results.tests).to.be.of.length(1)
             // expect(results.root).to.eql({})
-            expect(results.root.subs).to.be.of.length(2)
-            expect(results.root.subs[1].message).to.eql(message)
+            expect(results.root.subs).to.be.of.length(1)
+            expect(results.root.subs[0].subs[0].subs[0].messages).to.eql(['---  / suite / nested / test', message])
         })
 
         it('with errors', () => {
             let errors = ['an error', 'another error']
             let tree = new ResultTree
             tree.errors = errors
-            expect(tree.root.subs).to.be.of.length(2)
-            expect(tree.root.subs[0].message).to.eql(errors[0])
-            expect(tree.root.subs[1].message).to.eql(errors[1])
+            tree.accept({ ...emptyResult, event: 'testCompleted' })
+            expect(tree.root.subs).to.be.of.length(0)
+            expect(tree.root.messages).to.eql(['--- '].concat(errors.map(m => '! ' + m)))
         })
 
         it('with more errors', () => {
@@ -66,11 +73,13 @@ describe('Result Tree Tests', () => {
             tree.errors = errors
             let moreErrors = ['yet another error', 'give up']
             tree.errors = moreErrors
-            expect(tree.root.subs).to.be.of.length(4)
-            expect(tree.root.subs[0].message).to.eql(errors[0])
-            expect(tree.root.subs[1].message).to.eql(errors[1])
-            expect(tree.root.subs[2].message).to.eql(moreErrors[0])
-            expect(tree.root.subs[3].message).to.eql(moreErrors[1])
+            tree.accept({ ...emptyResult, event: 'testCompleted' })
+            expect(tree.root.messages).to.eql(
+                ["--- "
+                    , "! an error"
+                    , "! another error"
+                    , "! yet another error"
+                    , "! give up"])
         })
 
         it('model runStart', () => {
@@ -79,24 +88,25 @@ describe('Result Tree Tests', () => {
             let line = '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
             results.parse([line])
             expect(results.tests).to.be.of.length(1)
-            expect(results.root.message).to.be.undefined
             expect(results.root.subs).to.be.of.length(1)
+            expect(results.root.subs[0].messages).to.eql([])
 
             let line2 = '{"event":"runStart","testCount":"24","fuzzRuns":"100","paths":[],"initialSeed":"1646362476"}'
             results.parse([line2])
             expect(results.tests).to.be.of.length(0)
             expect(results.root.subs).to.be.of.length(1)
-            expect(results.root.subs[0].message).to.eql('Running ...')
+            expect(results.root.subs[0].name).to.eql('Running ...')
+            expect(results.root.subs[0].messages).to.eql([])
         })
 
 
     })
 
     describe('test nodes', () => {
-        let root: Node = new Node
+        let root: Node = new Node('')
 
         beforeEach(() => {
-            root = new Node
+            root = new Node('')
         })
 
         it('root', () => {
@@ -111,7 +121,7 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('suite')
             expect(root.subs[0].result).to.eql(result)
@@ -132,8 +142,8 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
-            root.addResult(result2)
+            root.addResult(result, [])
+            root.addResult(result2, [])
             expect(root.subs).to.be.length(2)
             // expect(root.subs).to.eql([])
             expect(root.subs[0].name).to.eql('test')
@@ -150,7 +160,7 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('suite')
             expect(root.subs[0].subs[0].name).to.eql('test')
@@ -179,9 +189,9 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
-            root.addResult(result2)
-            root.addResult(result3)
+            root.addResult(result, [])
+            root.addResult(result2, [])
+            root.addResult(result3, [])
             expect(root.subs).to.be.length(2)
             expect(root.subs[0].name).to.eql('suite')
             expect(root.subs[0].subs[0].name).to.eql('test')
@@ -201,7 +211,7 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('test')
         })
@@ -214,7 +224,7 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('test')
         })
@@ -227,14 +237,14 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('suite')
             expect(root.subs[0].subs[0].name).to.eql('test')
         })
 
         it('test module file in message', () => {
-            let node = new Node('message with file blabla/tests/Module/File.elm')
+            let node = new Node('', ['message with file blabla/tests/Module/File.elm'])
             let module = node.testModule
             expect(module).to.eql('Module.File')
         })
@@ -247,10 +257,10 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('test')
-            expect(root.subs[0].canDiff).to.false
+            expect(root.subs[0].canDiff).to.be.false
         })
 
         it('can diff', () => {
@@ -269,7 +279,7 @@ describe('Result Tree Tests', () => {
                 }]
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('test')
             expect(root.subs[0].canDiff).to.true
@@ -295,7 +305,7 @@ describe('Result Tree Tests', () => {
                 }]
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('test')
             expect(root.subs[0].canDiff).to.true
@@ -313,7 +323,7 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('Module.suite')
             expect(root.subs[0].subs[0].name).to.eql('test')
@@ -333,7 +343,7 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('Module.suite')
             expect(root.subs[0].subs[0].name).to.eql('nested')
@@ -354,7 +364,7 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('Module.suite')
             expect(root.subs[0].subs[0].name).to.eql('nested')
@@ -382,17 +392,17 @@ describe('Result Tree Tests', () => {
                 }]
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('suite')
             expect(root.subs[0].green).to.eql(false)
             expect(root.subs[0].expanded).to.eql(true)
             expect(root.subs[0].subs[0].name).to.eql('test')
             expect(root.subs[0].subs[0].green).to.eql(false)
-            expect(root.subs[0].subs[0].expanded).to.eql(false)
+            expect(root.subs[0].subs[0].expanded).to.eql(undefined)
         })
 
-        it('collapsed red leaf', () => {
+        it('flat red leaf', () => {
             let result: Result = {
                 event: ''
                 , status: 'fail'
@@ -400,14 +410,14 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('suite')
             expect(root.subs[0].green).to.eql(false)
             expect(root.subs[0].expanded).to.eql(true)
             expect(root.subs[0].subs[0].name).to.eql('test')
             expect(root.subs[0].subs[0].green).to.eql(false)
-            expect(root.subs[0].subs[0].expanded).to.eql(false)
+            expect(root.subs[0].subs[0].expanded).to.eql(undefined)
         })
 
         it('collapsed green leaf', () => {
@@ -418,10 +428,11 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('test')
             expect(root.subs[0].green).to.eql(true)
+            // expect(root.subs[0]).to.eql({})
             expect(root.subs[0].expanded).to.eql(undefined)
         })
 
@@ -433,16 +444,38 @@ describe('Result Tree Tests', () => {
                 , failures: []
                 , duration: '0'
             }
-            root.addResult(result)
+            root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('suite')
             expect(root.subs[0].green).to.eql(true)
             expect(root.subs[0].expanded).to.eql(false)
         })
 
-        it('flat message', () => {
-            root.message = "a message"
-            expect(root.expanded).to.eql(undefined)
+        it('flat root', () => {
+            let flat = new Node('flat')
+            expect(flat.expanded).to.eql(undefined)
+        })
+
+        it('aggregate messages', () => {
+            let result: Result = {
+                event: ''
+                , status: 'pass'
+                , labels: ['suite', 'test']
+                , failures: []
+                , duration: '0'
+            }
+            let result2: Result = {
+                event: ''
+                , status: 'pass'
+                , labels: ['suite', 'test2']
+                , failures: []
+                , duration: '0'
+            }
+            root.addResult(result, ['message 1'])
+            root.addResult(result2, ['message 2'])
+            expect(root.subs[0].subs[0].messages).to.eql(["---  / suite / test", 'message 1'])
+            expect(root.subs[0].subs[1].messages).to.eql(["---  / suite / test2", 'message 2'])
+            expect(root.subs[0].messages).to.eql(["---  / suite / test", 'message 1', "---  / suite / test2", 'message 2'])
         })
     })
 })
