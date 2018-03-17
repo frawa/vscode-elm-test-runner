@@ -58,7 +58,8 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		this._onDidChangeTreeData.fire();
 
 		let elm = child_process.spawn('elm', ['test', '--report', 'json', '--watch'], {
-			cwd: this.tree.path
+			cwd: this.tree.path,
+			env: process.env
 		})
 		this.process = elm;
 
