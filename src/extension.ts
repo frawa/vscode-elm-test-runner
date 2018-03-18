@@ -20,13 +20,14 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('elmTestRunner.run', () => elmTestsProvider.run()),
         vscode.commands.registerCommand('elmTestRunner.stop', () => elmTestsProvider.stop()),
         vscode.commands.registerCommand('elmTestRunner.diff', node => elmTestsProvider.diff(node)),
-        vscode.commands.registerCommand('extension.openElmTestSelection', (messages, module, testName) => elmTestsProvider.select(messages, module, testName))
+        vscode.commands.registerCommand('extension.openElmTestSelection', (messages, module, testName) => elmTestsProvider.select(messages, module, testName)),
+        vscode.commands.registerCommand('extension.elmTestsRunning', () => elmTestsProvider.running())
     )
 
     context.subscriptions.push(
         commandRegistrations,
-        providerRegistration
-        // outputChannel
+        providerRegistration,
+        outputChannel
     )
 }
 

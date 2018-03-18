@@ -14,6 +14,11 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 	private tree: ResultTree = new ResultTree
 	private process?: child_process.ChildProcess
+	private runningInfo: any = {
+		running: false,
+		total: 0,
+		current: 0
+	}
 
 	constructor(private context: vscode.ExtensionContext, private outputChannel: vscode.OutputChannel) {
 		this.run()
@@ -47,6 +52,21 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		setTimeout(() => this.run(), 1000)
 	}
 
+	running(): Thenable<{}> {
+		return vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: 'elm tests' }, p => {
+			return new Promise((resolve, reject) => {
+				p.report({ message: `Running ${this.runningInfo.total} elm tests` });
+				let handle = setInterval(() => {
+					p.report({ message: `Running ${this.runningInfo.total} elm tests, at ${this.runningInfo.current}` });
+					if (!this.runningInfo.running) {
+						clearInterval(handle);
+						resolve();
+					}
+				}, 2000);
+			});
+		});
+	}
+
 	run(): void {
 		if (this.process) {
 			return
@@ -55,7 +75,22 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		let path = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath
 
 		this.tree = new ResultTree(path)
-		this._onDidChangeTreeData.fire();
+
+		this.tree.progress = (current: number, testCount?: number) => {
+			if (current === 0) {
+				this._onDidChangeTreeData.fire(this.tree.root);
+				this.runningInfo.running = true
+				this.runningInfo.total = testCount
+				vscode.commands.executeCommand('extension.elmTestsRunning')
+			} else if (current === -1) {
+				this.runningInfo.running = false
+				this._onDidChangeTreeData.fire(this.tree.root);
+			} else {
+				this.runningInfo.current = current
+			}
+		}
+
+		// this._onDidChangeTreeData.fire();
 
 		let elm = child_process.spawn('elm', ['test', '--report', 'json', '--watch'], {
 			cwd: this.tree.path,
@@ -99,7 +134,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 			this.out(['EXIT| ' + code])
 			this.tree = new ResultTree()
 			this._onDidChangeTreeData.fire()
-			if (code !== null) {
+			if (code !== null && code !== 1) {
 				this.restart()
 			}
 		})

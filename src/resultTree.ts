@@ -13,7 +13,8 @@ export interface Result {
     status: string
     labels: string[]
     failures: Failure[]
-    duration: string
+    duration: string,
+    testCount?: number
 }
 
 export function parseTestResult(line: string): (Result | string) {
@@ -25,16 +26,24 @@ export function parseTestResult(line: string): (Result | string) {
     return result
 }
 
+type ProgressListener = (current: number, testCount?: number) => void
+
 export class ResultTree {
     private _tests: Result[] = []
     private _root: Node = new Node('')
     private readonly _running: string = "Running ..."
     private _pendingMessages: string[] = []
+    private _progress: ProgressListener = () => { }
+    private count: number = 0
 
     constructor(public readonly path?: string) {
         if (path) {
             this.running = true
         }
+    }
+
+    set progress(progress: ProgressListener) {
+        this._progress = progress
     }
 
     isRunning(): boolean {
@@ -89,10 +98,15 @@ export class ResultTree {
         if (result.event === 'testCompleted') {
             this._root.addResult(result, this.popMessages())
             this._tests.push(result)
+            this.count++
+            this._progress(this.count)
         } else if (result.event === 'runStart') {
             this.running = true
+            this.count = 0
+            this._progress(0, result.testCount)
         } else if (result.event === 'runComplete') {
             this.running = false
+            this._progress(-1)
         }
     }
 
