@@ -29,9 +29,9 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		this.outputChannel.show(true)
 	}
 
-	private replaceOut(lines: string[]): void {
-		if (lines.length > 0) {
-			this.outputChannel.clear()
+	private replaceOut(lines?: string[]): void {
+		this.outputChannel.clear()
+		if (lines && lines.length > 0) {
 			this.out(lines)
 		}
 	}
@@ -40,8 +40,10 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		if (this.process) {
 			console.log(`stopping ...`)
 			this.out(['STOP|'])
-			this.process.kill()
+			let process = this.process
 			this.process = undefined
+			process.kill()
+			setTimeout(() => process.kill("SIGKILL"), 2000)
 		}
 	}
 
@@ -78,6 +80,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 		this.tree.progress = (current: number, testCount?: number) => {
 			if (current === 0) {
+				this.replaceOut()
 				this._onDidChangeTreeData.fire(this.tree.root);
 				this.runningInfo.running = true
 				this.runningInfo.total = testCount
@@ -127,6 +130,9 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 			this.out(['CLOSE| ' + code])
 			this.tree = new ResultTree()
 			this._onDidChangeTreeData.fire()
+			if (code === 1) {
+				this.restart()
+			}
 		})
 
 		elm.on('exit', (code: number) => {
