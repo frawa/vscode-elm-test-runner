@@ -262,7 +262,7 @@ export class Node {
         if (this.parent) {
             let fromParent = this.parent.testModuleAndName
             if (fromParent) {
-                let [module, _] = fromParent
+                let module = fromParent[0]
                 return [module, this.name]
             }
         }
