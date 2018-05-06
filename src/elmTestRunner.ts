@@ -26,13 +26,13 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 	private out(lines: string[]): void {
 		lines.forEach(line => this.outputChannel.appendLine(line))
-		this.outputChannel.show(true)
 	}
 
 	private replaceOut(lines?: string[]): void {
 		this.outputChannel.clear()
 		if (lines && lines.length > 0) {
 			this.out(lines)
+			this.outputChannel.show(true)
 		}
 	}
 
