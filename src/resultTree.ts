@@ -168,8 +168,17 @@ export class Node {
 
     private add(labels: string[], result: Result): Node {
         if (labels.length === 0) {
-            this.result = result
-            this.addFailures(result.failures)
+            if (result.status === 'todo') {
+                let todoLabel = result.failures[0].toString()
+                let todo = new Node(todoLabel, ['todo'])
+                todo.addFailures(result.failures)
+                todo.result = result
+                todo.result.labels = [...result.labels, todoLabel]
+                this.addChild(todo)
+            } else {
+                this.addFailures(result.failures)
+                this.result = result
+            }
             return this
         }
         let name = labels.shift()
@@ -186,6 +195,9 @@ export class Node {
 
     private addFailures(failures: Failure[]) {
         let failureLines = (acc: string[], failure: Failure) => {
+            if (typeof failure === 'string') {
+                acc.push(failure)
+            }
             if (failure.message) {
                 acc.push(failure.message)
             }
@@ -198,8 +210,7 @@ export class Node {
             return acc
         }
 
-        let lines = failures
-            .reduce(failureLines, [])
+        let lines = failures.reduce(failureLines, [])
         this.addMessages(lines)
     }
 
@@ -247,6 +258,15 @@ export class Node {
             let labels = this.result.labels
             return [labels[0], labels[labels.length - 1]]
         }
+
+        if (this.parent) {
+            let fromParent = this.parent.testModuleAndName
+            if (fromParent) {
+                let [module, _] = fromParent
+                return [module, this.name]
+            }
+        }
+
         let module = this.testModule
         let name = this.name.length > 0 ? this.name : undefined
         return module && name ? [module, name] : undefined
@@ -260,7 +280,8 @@ export class Node {
         if (this.result) {
             if (this.result.failures.length > 0) {
                 let failure = this.result.failures[0]
-                if (failure.reason.data
+                if (failure.reason
+                    && failure.reason.data
                     && (typeof failure.reason.data !== 'string')) {
                     let data = failure.reason.data
                     return [evalStringLiteral(data.expected), evalStringLiteral(data.actual)]
