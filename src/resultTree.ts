@@ -60,7 +60,7 @@ export class ResultTree {
                 this._root.subs.shift()
                 let dangeling = this.popMessages()
                 if (dangeling.length > 0) {
-                    this._root.subs.push(new Node('Mesages', dangeling))
+                    this._root.subs.push(new Node('Messages', dangeling))
                 }
             }
         }
