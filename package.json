@@ -97,6 +97,7 @@
         "vscode": "^1.1.13"
     },
     "dependencies": {
-        "jsonc-parser": "^0.4.2"
+        "jsonc-parser": "^0.4.2",
+        "tree-kill": "^1.2.0"
     }
 }

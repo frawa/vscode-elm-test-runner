@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { } from './elmTestResult';
 import { ResultTree, Node } from './resultTree';
 import { DiffProvider } from './diffProvider'
 
 import * as child_process from 'child_process'
 
+var kill = require('tree-kill'); 
 
 export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
@@ -38,12 +38,16 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 	stop(): void {
 		if (this.process) {
-			console.log(`stopping ...`)
-			this.out(['STOP|'])
+			console.log(`stopping ... ${this.process.pid}`)
+			this.out(['STOP|${this.process.pid}|'])
 			let process = this.process
 			this.process = undefined
-			process.kill()
-			setTimeout(() => process.kill("SIGKILL"), 2000)
+			kill(process.pid)
+			console.info(`tree killing ... ${process.pid}`)
+			setTimeout(() => {
+				kill(process.pid,"SIGKILL")
+				console.log(`hard tree killing ... ${process.pid}`)
+			}, 3000)
 		}
 	}
 
@@ -103,13 +107,13 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 		elm.stdout.on('data', (data: string) => {
 			let lines = data.toString().split('\n')
-			console.log(`stdout: ${lines}`);
+			console.log(`stdout|${elm.pid}} ${lines}`);
 			this.tree.parse(lines)
 			this._onDidChangeTreeData.fire();
 		})
 
 		elm.stderr.on('data', (data: string) => {
-			console.log(`stderr: ${data}`)
+			console.log(`stderr|${elm.pid}| ${data}`)
 			let lines = data.toString().split('\n')
 			this.tree.errors = lines
 			this.out(lines)
@@ -118,14 +122,14 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 		elm.on('error', (err) => {
 			let line = err.toString()
-			console.log(`child prcess error ${line}`)
+			console.log(`child process ${elm.pid} error ${line}`)
 			this.tree.errors = [line]
 			this.out(['ERROR| ' + line])
 			this._onDidChangeTreeData.fire()
 		})
 
 		elm.on('close', (code: number) => {
-			console.log(`child prcess closed with code ${code}`);
+			console.log(`child process ${elm.pid} closed with code ${code}`);
 			this.stop()
 			this.out(['CLOSE| ' + code])
 			this.tree = new ResultTree()
@@ -136,7 +140,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		})
 
 		elm.on('exit', (code: number) => {
-			console.log(`child prcess exited with code ${code}`);
+			console.log(`child prcess ${elm.pid} exited with code ${code}`);
 			this.out(['EXIT| ' + code])
 			this.tree = new ResultTree()
 			this._onDidChangeTreeData.fire()
