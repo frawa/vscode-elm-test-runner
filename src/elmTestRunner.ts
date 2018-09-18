@@ -39,11 +39,11 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	stop(): void {
 		if (this.process) {
 			console.log(`stopping ... ${this.process.pid}`)
-			this.out(['STOP|${this.process.pid}|'])
 			let process = this.process
 			this.process = undefined
+			this.out([`STOP|${process.pid}|`])
 			kill(process.pid)
-			console.info(`tree killing ... ${process.pid}`)
+			console.log(`tree killing ... ${process.pid}`)
 			setTimeout(() => {
 				kill(process.pid,"SIGKILL")
 				console.log(`hard tree killing ... ${process.pid}`)
