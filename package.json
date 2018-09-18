@@ -13,7 +13,7 @@
         "vscode": "^1.21.0"
     },
     "categories": [
-        "Languages"
+        "Programming Languages"
     ],
     "license": "MIT",
     "activationEvents": [
@@ -21,6 +21,15 @@
     ],
     "main": "./out/extension",
     "contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "elm-test-runner",
+					"title": "Elm Test Runner",
+					"icon": "resources/Elm_logo.svg"
+				}
+			]
+		},
         "commands": [
             {
                 "command": "elmTestRunner.run",
@@ -48,10 +57,10 @@
             }
         ],
         "views": {
-            "explorer": [
+            "elm-test-runner": [
                 {
                     "id": "elmTestRunner",
-                    "name": "Elm Test Runner"
+                    "name": "Tests"
                 }
             ]
         },
