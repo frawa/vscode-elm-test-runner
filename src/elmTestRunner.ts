@@ -5,23 +5,17 @@ import { DiffProvider } from './diffProvider'
 
 import * as child_process from 'child_process'
 
-var kill = require('tree-kill'); 
-
 export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 	private _onDidChangeTreeData: vscode.EventEmitter<Node | null> = new vscode.EventEmitter<Node | null>();
 	readonly onDidChangeTreeData: vscode.Event<Node | null> = this._onDidChangeTreeData.event;
 
 	private tree: ResultTree = new ResultTree
-	private process?: child_process.ChildProcess
-	private runningInfo: any = {
-		running: false,
-		total: 0,
-		current: 0
-	}
+
+	private enabled: boolean = true
 
 	constructor(private context: vscode.ExtensionContext, private outputChannel: vscode.OutputChannel) {
-		this.run()
+		this.runElmTestOnce()
 	}
 
 	private out(lines: string[]): void {
@@ -36,118 +30,64 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		}
 	}
 
-	stop(): void {
-		if (this.process) {
-			console.log(`stopping ... ${this.process.pid}`)
-			let process = this.process
-			this.process = undefined
-			this.out([`STOP|${process.pid}|`])
-			kill(process.pid)
-			console.log(`tree killing ... ${process.pid}`)
-			setTimeout(() => {
-				kill(process.pid,"SIGKILL")
-				console.log(`hard tree killing ... ${process.pid}`)
-			}, 3000)
-		}
+	enable(): void {
+		this.enabled = true
 	}
 
-	private restart(): void {
-		this.stop()
-		console.log(`restarting (after crash?) ...`)
-		this.out(['RESTART|'])
-		setTimeout(() => this.run(), 1000)
+	disable(): void {
+		this.enabled = false
 	}
 
-	running(): Thenable<{}> {
-		return vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: 'elm tests' }, p => {
-			return new Promise((resolve, reject) => {
-				p.report({ message: `Running ${this.runningInfo.total} elm tests` });
-				let handle = setInterval(() => {
-					p.report({ message: `Running ${this.runningInfo.total} elm tests, at ${this.runningInfo.current}` });
-					if (!this.runningInfo.running) {
-						clearInterval(handle);
-						resolve();
-					}
-				}, 2000);
-			});
-		});
-	}
-
-	run(): void {
-		if (this.process) {
-			return
-		}
-		// TODO support multiple workspaces
-		let path = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath
-
-		this.tree = new ResultTree(path)
-
-		this.tree.progress = (current: number, testCount?: number) => {
-			if (current === 0) {
-				this.replaceOut()
-				this._onDidChangeTreeData.fire(this.tree.root);
-				this.runningInfo.running = true
-				this.runningInfo.total = testCount
-				vscode.commands.executeCommand('extension.elmTestsRunning')
-			} else if (current === -1) {
-				this.runningInfo.running = false
-				this._onDidChangeTreeData.fire(this.tree.root);
-			} else {
-				this.runningInfo.current = current
-			}
-		}
-
-		// this._onDidChangeTreeData.fire();
+	private runElmTestAgain(path?: string) {
 
 		let elm = child_process.spawn('elm', ['test', '--report', 'json', '--watch'], {
 			cwd: this.tree.path,
 			env: process.env
 		})
-		this.process = elm;
+
+		this.tree = new ResultTree(path)
+		this._onDidChangeTreeData.fire();
 
 		elm.stdout.on('data', (data: string) => {
 			let lines = data.toString().split('\n')
-			console.log(`stdout|${elm.pid}} ${lines}`);
 			this.tree.parse(lines)
 			this._onDidChangeTreeData.fire();
 		})
+	}
 
-		elm.stderr.on('data', (data: string) => {
-			console.log(`stderr|${elm.pid}| ${data}`)
-			let lines = data.toString().split('\n')
-			this.tree.errors = lines
-			this.out(lines)
-			this._onDidChangeTreeData.fire()
-		})
+	getOrCreateTerminal(name: string): vscode.Terminal {
+		const terminals = vscode.window.terminals;
+		const found = terminals.find(t => t.name == name)
 
-		elm.on('error', (err) => {
-			let line = err.toString()
-			console.log(`child process ${elm.pid} error ${line}`)
-			this.tree.errors = [line]
-			this.out(['ERROR| ' + line])
-			this._onDidChangeTreeData.fire()
-		})
+		if (found) {
+			return found
+		}
 
-		elm.on('close', (code: number) => {
-			console.log(`child process ${elm.pid} closed with code ${code}`);
-			this.stop()
-			this.out(['CLOSE| ' + code])
-			this.tree = new ResultTree()
-			this._onDidChangeTreeData.fire()
-			if (code === 1) {
-				this.restart()
+		let path = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath
+		let terminal = vscode.window.createTerminal({
+			name: name,
+			cwd: path
+			// env: process.env 
+		});
+
+		(<any>terminal).onDidWriteData((data: string) => {
+			if (data.indexOf('TEST RUN PASSED') > 0 || data.indexOf('TEST RUN FAILED') > 0) {
+				this.runElmTestAgain(path);
 			}
 		})
 
-		elm.on('exit', (code: number) => {
-			console.log(`child prcess ${elm.pid} exited with code ${code}`);
-			this.out(['EXIT| ' + code])
-			this.tree = new ResultTree()
-			this._onDidChangeTreeData.fire()
-			if (code !== null && code !== 1) {
-				this.restart()
-			}
-		})
+		return terminal
+	}
+
+	runElmTestOnce() {
+		if (!this.enabled) {
+			return;
+		}
+
+		let terminal = this.getOrCreateTerminal('Elm Test Run')
+
+		terminal.sendText("elm test")
+		terminal.show();
 	}
 
 	getChildren(node?: Node): Thenable<Node[]> {
@@ -160,6 +100,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	getTreeItem(node: Node): vscode.TreeItem {
 		let result = new vscode.TreeItem(this.getLabel(node), this.getState(node))
 		result.iconPath = this.getIcon(node)
+		result.id = node.id
 
 		if (node.testModuleAndName) {
 			let [module, testName] = node.testModuleAndName

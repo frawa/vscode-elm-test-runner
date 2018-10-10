@@ -153,6 +153,10 @@ export class Node {
         return [this.name]
     }
 
+    get id() : string {
+        return this.path.join("/") + this.green
+    }
+
     private addMessages(messages: string[]): void {
         this._messages = this._messages.concat(messages)
     }

@@ -10,7 +10,7 @@
     "version": "0.3.0",
     "publisher": "FraWa",
     "engines": {
-        "vscode": "^1.21.0"
+        "vscode": "^1.28.0"
     },
     "categories": [
         "Programming Languages"
@@ -32,16 +32,16 @@
 		},
         "commands": [
             {
-                "command": "elmTestRunner.run",
-                "title": "Run/Watch Elm Tests",
+                "command": "elmTestRunner.enable",
+                "title": "Enable Elm Tests",
                 "icon": {
                     "light": "resources/light/play-7-16.png",
                     "dark": "resources/dark/play-7-16.png"
                 }
             },
             {
-                "command": "elmTestRunner.stop",
-                "title": "Stop watching Elm Tests",
+                "command": "elmTestRunner.disable",
+                "title": "Disable Elm Tests",
                 "icon": {
                     "light": "resources/light/eject-16.png",
                     "dark": "resources/dark/eject-16.png"
@@ -67,12 +67,12 @@
         "menus": {
             "view/title": [
                 {
-                    "command": "elmTestRunner.run",
+                    "command": "elmTestRunner.enable",
                     "when": "view == elmTestRunner",
                     "group": "navigation"
                 },
                 {
-                    "command": "elmTestRunner.stop",
+                    "command": "elmTestRunner.disable",
                     "when": "view == elmTestRunner",
                     "group": "navigation"
                 }
@@ -103,10 +103,9 @@
         "ts-mocha": "^1.1.0",
         "tslint": "^5.8.0",
         "typescript": "^2.6.1",
-        "vscode": "^1.1.13"
+        "vscode": "^1.1.21"
     },
     "dependencies": {
-        "jsonc-parser": "^0.4.2",
-        "tree-kill": "^1.2.0"
+        "jsonc-parser": "^0.4.2"
     }
 }
