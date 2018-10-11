@@ -29,40 +29,33 @@ export function parseTestResult(line: string): (Result | string) {
 type ProgressListener = (current: number, testCount?: number) => void
 
 export class ResultTree {
+    private readonly _running: string = "Running ..."
+
     private _tests: Result[] = []
     private _root: Node = new Node('')
-    private readonly _running: string = "Running ..."
+
     private _pendingMessages: string[] = []
     private _progress: ProgressListener = () => { }
     private count: number = 0
 
     constructor(public readonly path?: string) {
-        if (path) {
-            this.running = true
-        }
     }
 
     set progress(progress: ProgressListener) {
         this._progress = progress
     }
 
-    isRunning(): boolean {
-        return this._root.subs.length > 0
-            && this._root.subs[0].name === this._running
+    private start(): void {
+        this._tests = []
+        this._root.subs = [new Node(this._running)]
+
     }
 
-    private set running(running: boolean) {
-        if (this.isRunning() !== running) {
-            if (running) {
-                this._tests = []
-                this._root.subs = [new Node(this._running)]
-            } else {
-                this._root.subs.shift()
-                let dangeling = this.popMessages()
-                if (dangeling.length > 0) {
-                    this._root.subs.push(new Node('Messages', dangeling))
-                }
-            }
+    private complete(): void {
+        this._root.subs.shift()
+        let dangeling = this.popMessages()
+        if (dangeling.length > 0) {
+            this._root.subs.push(new Node('Messages', dangeling))
         }
     }
 
@@ -93,7 +86,7 @@ export class ResultTree {
 
     accept(result: Result): void {
         if (!result) {
-            return;
+            return
         }
         if (result.event === 'testCompleted') {
             this._root.addResult(result, this.popMessages())
@@ -101,11 +94,11 @@ export class ResultTree {
             this.count++
             this._progress(this.count)
         } else if (result.event === 'runStart') {
-            this.running = true
+            this.start();
             this.count = 0
             this._progress(0, result.testCount)
         } else if (result.event === 'runComplete') {
-            this.running = false
+            this.complete()
             this._progress(-1)
         }
     }
@@ -128,6 +121,7 @@ export class Node {
     result?: Result
     private _messages: string[] = []
     private parent?: Node
+    private _running: boolean = false
 
     constructor(public name: string, messages?: string[]) {
         if (messages) {
@@ -135,10 +129,13 @@ export class Node {
         }
     }
 
-    addResult(result: Result, messages: string[]): void {
+    addResult(result: Result, messages: string[]): Node {
         let labels: string[] = []
         labels = labels.concat(result.labels)
-        this.add(labels, result).addMessages(messages)
+        let ret = this.add(labels, result)
+        ret.addMessages(messages)
+        ret.running = false
+        return ret
     }
 
     addChild(child: Node): void {
@@ -153,8 +150,22 @@ export class Node {
         return [this.name]
     }
 
-    get id() : string {
-        return this.path.join("/") + this.green
+    get running(): boolean {
+        return this._running
+    }
+
+    set running(toggle: boolean) {
+        if (this._running == toggle) {
+            return
+        }
+        this._running = toggle
+        if (toggle) {
+            this.subs.forEach(sub => sub.running = toggle)
+        }
+    }
+
+    get id(): string {
+        return this.path.join("/") + (this.green ? "1" : "0") + (this.running ? "." : "")
     }
 
     private addMessages(messages: string[]): void {
