@@ -15,7 +15,6 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	private enabled: boolean = true
 
 	constructor(private context: vscode.ExtensionContext, private outputChannel: vscode.OutputChannel) {
-		this.runElmTestOnce()
 	}
 
 	private out(lines: string[]): void {
@@ -31,28 +30,50 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	}
 
 	enable(): void {
+		if (this.enabled) {
+			return
+		}
 		this.enabled = true
+		this.runElmTestOnce()
 	}
 
 	disable(): void {
+		if (!this.enabled) {
+			return
+		}
 		this.enabled = false
+		this.tree = new ResultTree()
+		this._onDidChangeTreeData.fire();
 	}
 
 	private runElmTestAgain(path?: string) {
-
-		let elm = child_process.spawn('elm', ['test', '--report', 'json', '--watch'], {
-			cwd: this.tree.path,
+		let elm = child_process.spawn('elm', ['test', '--report', 'json'], {
+			cwd: path,
 			env: process.env
 		})
 
-		this.tree = new ResultTree(path)
+		if (!this.tree.path) {
+			this.tree = new ResultTree(path)
+		}
+		this.tree.root.running = true
 		this._onDidChangeTreeData.fire();
 
 		elm.stdout.on('data', (data: string) => {
 			let lines = data.toString().split('\n')
-			this.tree.parse(lines)
-			this._onDidChangeTreeData.fire();
+			lines
+				.forEach(line => {
+					this.tree.parse([line])
+					this._onDidChangeTreeData.fire()
+				})
 		})
+
+		elm.stderr.on('data', (data: string) => {
+			let lines = data.toString().split('\n')
+			console.log(lines)
+		})
+
+		elm.on('close', (code) => {
+		});
 	}
 
 	getOrCreateTerminal(name: string): vscode.Terminal {
@@ -126,7 +147,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		if (node.expanded === undefined) {
 			return vscode.TreeItemCollapsibleState.None
 		}
-		return node.expanded
+		return node.expanded || node.running
 			? vscode.TreeItemCollapsibleState.Expanded
 			: vscode.TreeItemCollapsibleState.Collapsed
 	}
@@ -156,7 +177,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	}
 
 	private getIcon(node: Node): any {
-		if (this.tree.isRunning()) {
+		if (node.running) {
 			return null
 		}
 		let icon = node.green
@@ -169,7 +190,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	}
 
 	private getLabel(node: Node): string {
-		return node.name
+		return node.running ? "... " + node.name : node.name
 	}
 
 	diff(node: Node) {
