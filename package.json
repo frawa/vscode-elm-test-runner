@@ -7,7 +7,7 @@
         "type": "git",
         "url": " https://github.com/frawa/vscode-elm-test-runner.git"
     },
-    "version": "0.3.0",
+    "version": "0.5.0",
     "publisher": "FraWa",
     "engines": {
         "vscode": "^1.28.0"
@@ -21,15 +21,15 @@
     ],
     "main": "./out/extension",
     "contributes": {
-		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "elm-test-runner",
-					"title": "Elm Test Runner",
-					"icon": "resources/Elm_logo.svg"
-				}
-			]
-		},
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "elm-test-runner",
+                    "title": "Elm Test Runner",
+                    "icon": "resources/Elm_logo.svg"
+                }
+            ]
+        },
         "commands": [
             {
                 "command": "elmTestRunner.enable",
@@ -92,20 +92,20 @@
         "watch": "tsc -watch -p ./",
         "postinstall": "node ./node_modules/vscode/bin/install",
         "test": "npm run compile && node ./node_modules/vscode/bin/test",
-        "utest": "ts-mocha -p ./ src/utest/**/*.test.ts",
+        "utest": "mocha -r ts-node/register ./ src/utest/**/*.test.ts",
         "utest-watch": "ts-mocha --watch -p ./ src/utest/**/*.test.ts"
     },
     "devDependencies": {
         "@types/chai": "^4.1.2",
-        "@types/mocha": "^2.2.42",
-        "@types/node": "^7.0.56",
-        "chai": "^4.1.2",
-        "ts-mocha": "^1.1.0",
+        "@types/mocha": "^5.2.5",
+        "@types/node": "^8.10.25",
+        "chai": "^4.2.0",
+        "ts-node": "^7.0.1",
         "tslint": "^5.8.0",
-        "typescript": "^2.6.1",
+        "typescript": "^3.1.2",
         "vscode": "^1.1.21"
     },
     "dependencies": {
-        "jsonc-parser": "^0.4.2"
+        "jsonc-parser": "^2.0.2"
     }
 }
