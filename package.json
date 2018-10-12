@@ -33,19 +33,11 @@
         },
         "commands": [
             {
-                "command": "elmTestRunner.enable",
-                "title": "Enable Elm Tests",
+                "command": "elmTestRunner.toggle",
+                "title": "Enable/Disable Elm Tests",
                 "icon": {
                     "light": "resources/light/play-7-16.png",
                     "dark": "resources/dark/play-7-16.png"
-                }
-            },
-            {
-                "command": "elmTestRunner.disable",
-                "title": "Disable Elm Tests",
-                "icon": {
-                    "light": "resources/light/eject-16.png",
-                    "dark": "resources/dark/eject-16.png"
                 }
             },
             {
@@ -68,12 +60,7 @@
         "menus": {
             "view/title": [
                 {
-                    "command": "elmTestRunner.enable",
-                    "when": "view == elmTestRunner",
-                    "group": "navigation"
-                },
-                {
-                    "command": "elmTestRunner.disable",
+                    "command": "elmTestRunner.toggle",
                     "when": "view == elmTestRunner",
                     "group": "navigation"
                 }

@@ -32,7 +32,15 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		}
 	}
 
-	enable(): void {
+	toggle(): void {
+		if (this.enabled) {
+			this.disable()
+		} else {
+			this.enable()
+		}
+	}
+
+	private enable(): void {
 		if (this.enabled) {
 			return
 		}
@@ -40,7 +48,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		this.runElmTestOnce()
 	}
 
-	disable(): void {
+	private disable(): void {
 		if (!this.enabled) {
 			return
 		}

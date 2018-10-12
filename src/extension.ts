@@ -17,8 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.registerTreeDataProvider('elmTestRunner', elmTestsProvider)
 
     const commandRegistrations = vscode.Disposable.from(
-        vscode.commands.registerCommand('elmTestRunner.enable', () => elmTestsProvider.enable()),
-        vscode.commands.registerCommand('elmTestRunner.disable', () => elmTestsProvider.disable()),
+        vscode.commands.registerCommand('elmTestRunner.toggle', () => elmTestsProvider.toggle()),
         vscode.commands.registerCommand('elmTestRunner.diff', node => elmTestsProvider.diff(node)),
         vscode.commands.registerCommand('extension.openElmTestSelection', (messages, module, testName) => elmTestsProvider.select(messages, module, testName)),
     )
