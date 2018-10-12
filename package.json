@@ -10,14 +10,15 @@
     "version": "0.5.0",
     "publisher": "FraWa",
     "engines": {
-        "vscode": "^1.28.0"
+        "vscode": "^1.28.1"
     },
     "categories": [
         "Programming Languages"
     ],
     "license": "MIT",
     "activationEvents": [
-        "onView:elmTestRunner"
+        "onView:elmTestRunner",
+        "onLanguage:elm"
     ],
     "main": "./out/extension",
     "contributes": {
