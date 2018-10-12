@@ -45,6 +45,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 			return
 		}
 		this.enabled = true
+		this._running = false
 		this.runElmTestOnce()
 	}
 
@@ -129,8 +130,11 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		});
 
 		(<any>terminal).onDidWriteData((data: string) => {
-			if (data.indexOf('TEST RUN PASSED') > 0 || data.indexOf('TEST RUN FAILED') > 0) {
+			if (data.indexOf('TEST RUN PASSED') > -1 || data.indexOf('TEST RUN FAILED') > -1) {
 				this.runElmTestAgain();
+			}
+			if (data.indexOf('Compilation failed') > -1) {
+				this.running = false
 			}
 		})
 
@@ -224,8 +228,8 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 			return null
 		}
 		let icon = node.green
-			? this.context.asAbsolutePath(path.join('resources', 'Green_check.svg'))
-			: this.context.asAbsolutePath(path.join('resources', 'Red_x.svg'))
+			? this.context.asAbsolutePath(path.join('resources', 'outline-check-24px.svg'))
+			: this.context.asAbsolutePath(path.join('resources', 'outline-error_outline-24px.svg'))
 		return {
 			light: icon,
 			dark: icon

@@ -36,16 +36,16 @@
                 "command": "elmTestRunner.toggle",
                 "title": "Enable/Disable Elm Tests",
                 "icon": {
-                    "light": "resources/light/play-7-16.png",
-                    "dark": "resources/dark/play-7-16.png"
+                    "light": "resources/light/outline-toggle_on-24px.svg", 
+                    "dark": "resources/dark/outline-toggle_on-24px.svg" 
                 }
             },
             {
                 "command": "elmTestRunner.diff",
                 "title": "Difference",
                 "icon": {
-                    "light": "resources/light/compare-16.png",
-                    "dark": "resources/dark/compare-16.png"
+                    "light": "resources/light/outline-compare_arrows-24px.svg",
+                    "dark": "resources/dark/outline-compare_arrows-24px.svg"
                 }
             }
         ],
