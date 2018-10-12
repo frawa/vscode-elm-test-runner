@@ -51,8 +51,8 @@ describe('Result Tree Tests', () => {
             results.parse([line])
             expect(results.tests).to.be.of.length(1)
             // expect(results.root).to.eql({})
-            expect(results.root.subs).to.be.of.length(1)
-            expect(results.root.subs[0].name).to.eql('suite')
+            expect(results.root.subs).to.be.of.length(2)
+            expect(results.root.subs[1].name).to.eql('suite')
         })
 
         it('a message', () => {
@@ -69,8 +69,8 @@ describe('Result Tree Tests', () => {
             results.parse([message, line])
             expect(results.tests).to.be.of.length(1)
             // expect(results.root).to.eql({})
-            expect(results.root.subs).to.be.of.length(1)
-            expect(results.root.subs[0].subs[0].subs[0].messages).to.eql(['---  / suite / nested / test', message])
+            expect(results.root.subs).to.be.of.length(2)
+            expect(results.root.subs[1].subs[0].subs[0].messages).to.eql(['---  / suite / nested / test', message])
         })
 
         it('model with todo', () => {
@@ -80,18 +80,18 @@ describe('Result Tree Tests', () => {
             results.parse([line])
             expect(results.tests).to.be.of.length(1)
             // expect(results.root).to.eql({})
-            expect(results.root.subs).to.be.of.length(1)
-            expect(results.root.subs[0].name).to.eql('suite')
-            expect(results.root.subs[0].result).to.be.undefined
-            expect(results.root.subs[0].subs).to.of.length(1)
-            expect(results.root.subs[0].subs[0].name).to.eql('todo comment')
-            expect(results.root.subs[0].subs[0].result).not.to.be.undefined
-            let result = results.root.subs[0].subs[0].result
+            expect(results.root.subs).to.be.of.length(2)
+            expect(results.root.subs[1].name).to.eql('suite')
+            expect(results.root.subs[1].result).to.be.undefined
+            expect(results.root.subs[1].subs).to.of.length(1)
+            expect(results.root.subs[1].subs[0].name).to.eql('todo comment')
+            expect(results.root.subs[1].subs[0].result).not.to.be.undefined
+            let result = results.root.subs[1].subs[0].result
             if (result) {
                 expect(result.labels).to.eql(['suite', 'todo comment'])
                 expect(result.status).to.eql('todo')
             }
-            expect(results.root.subs[0].subs[0].messages).to.eql([
+            expect(results.root.subs[1].subs[0].messages).to.eql([
                 "---  / suite / todo comment",
                 "todo",
                 "todo comment"
@@ -103,7 +103,7 @@ describe('Result Tree Tests', () => {
             let tree = new ResultTree
             tree.errors = errors
             tree.accept({ ...emptyResult, event: 'testCompleted' })
-            expect(tree.root.subs).to.be.of.length(0)
+            expect(tree.root.subs).to.be.of.length(1)
             expect(tree.root.messages).to.eql(['--- '].concat(errors.map(m => '! ' + m)))
         })
 
@@ -128,14 +128,14 @@ describe('Result Tree Tests', () => {
             let line = '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
             results.parse([line])
             expect(results.tests).to.be.of.length(1)
-            expect(results.root.subs).to.be.of.length(1)
-            expect(results.root.subs[0].messages).to.eql([])
+            expect(results.root.subs).to.be.of.length(2)
+            expect(results.root.subs[1].messages).to.eql([])
 
             let line2 = '{"event":"runStart","testCount":"24","fuzzRuns":"100","paths":[],"initialSeed":"1646362476"}'
             results.parse([line2])
             expect(results.tests).to.be.of.length(0)
             expect(results.root.subs).to.be.of.length(1)
-            expect(results.root.subs[0].name).to.eql('Running ...')
+            expect(results.root.subs[0].name).to.eql('(Running tests ...)')
             expect(results.root.subs[0].messages).to.eql([])
         })
 
