@@ -23,14 +23,15 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('extension.openElmTestSelection', (messages, module, testName) => elmTestsProvider.select(messages, module, testName)),
     )
 
-    vscode.workspace.onDidSaveTextDocument((e: vscode.TextDocument) => {
+    const onSave = vscode.workspace.onDidSaveTextDocument((e: vscode.TextDocument) => {
         elmTestsProvider.runElmTestOnce()
     });
 
     context.subscriptions.push(
         commandRegistrations,
         providerRegistration,
-        outputChannel
+        outputChannel,
+        onSave
     )
 }
 
