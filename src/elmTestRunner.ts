@@ -10,11 +10,14 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	private _onDidChangeTreeData: vscode.EventEmitter<Node | null> = new vscode.EventEmitter<Node | null>();
 	readonly onDidChangeTreeData: vscode.Event<Node | null> = this._onDidChangeTreeData.event;
 
-	private tree: ResultTree = new ResultTree
-
 	private enabled: boolean = true
+	private _running: boolean = false
+	private _skipped: number = 0
+
+	private tree: ResultTree = new ResultTree(this.enabled)
 
 	constructor(private context: vscode.ExtensionContext, private outputChannel: vscode.OutputChannel) {
+		this.runElmTestOnce()
 	}
 
 	private out(lines: string[]): void {
@@ -42,26 +45,52 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 			return
 		}
 		this.enabled = false
-		this.tree = new ResultTree()
+		this.tree = new ResultTree(this.enabled)
 		this._onDidChangeTreeData.fire();
 	}
 
-	private runElmTestAgain(path?: string) {
+	private set running(toggle: boolean) {
+		if (this._running == toggle) {
+			return
+		}
+
+		this._running = toggle
+		if (toggle) {
+			this._skipped = 0
+			if (!this.tree.path) {
+				let path = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath
+				this.tree = new ResultTree(this.enabled, path)
+			}
+		} else if (this._skipped > 0) {
+			console.info(`Catching up ${this._skipped} triggers.`)
+			setTimeout(() => this.runElmTestOnce(), 500)
+		}
+		this._onDidChangeTreeData.fire();
+	}
+
+	private get running(): boolean {
+		return this._running
+	}
+
+	private get needToSkip(): boolean {
+		if (this._running) {
+			this._skipped++
+			return true
+		}
+		return false
+	}
+
+	private runElmTestAgain() {
 		let elm = child_process.spawn('elm', ['test', '--report', 'json'], {
-			cwd: path,
+			cwd: this.tree.path,
 			env: process.env
 		})
-
-		if (!this.tree.path) {
-			this.tree = new ResultTree(path)
-		}
-		this.tree.root.running = true
-		this._onDidChangeTreeData.fire();
 
 		elm.stdout.on('data', (data: string) => {
 			let lines = data.toString().split('\n')
 			lines
 				.forEach(line => {
+					// console.log(`lines ${lines.length}`)
 					this.tree.parse([line])
 					this._onDidChangeTreeData.fire()
 				})
@@ -73,6 +102,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		})
 
 		elm.on('close', (code) => {
+			this.running = false
 		});
 	}
 
@@ -84,16 +114,15 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 			return found
 		}
 
-		let path = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath
 		let terminal = vscode.window.createTerminal({
 			name: name,
-			cwd: path
+			cwd: this.tree.path
 			// env: process.env 
 		});
 
 		(<any>terminal).onDidWriteData((data: string) => {
 			if (data.indexOf('TEST RUN PASSED') > 0 || data.indexOf('TEST RUN FAILED') > 0) {
-				this.runElmTestAgain(path);
+				this.runElmTestAgain();
 			}
 		})
 
@@ -102,13 +131,19 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 	runElmTestOnce() {
 		if (!this.enabled) {
-			return;
+			return
 		}
+
+		if (this.needToSkip) {
+			return
+		}
+
+		this.running = true
 
 		let terminal = this.getOrCreateTerminal('Elm Test Run')
 
 		terminal.sendText("elm test")
-		terminal.show();
+		terminal.show()
 	}
 
 	getChildren(node?: Node): Thenable<Node[]> {
@@ -147,7 +182,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		if (node.expanded === undefined) {
 			return vscode.TreeItemCollapsibleState.None
 		}
-		return node.expanded || node.running
+		return node.expanded || this.running
 			? vscode.TreeItemCollapsibleState.Expanded
 			: vscode.TreeItemCollapsibleState.Collapsed
 	}
@@ -177,7 +212,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	}
 
 	private getIcon(node: Node): any {
-		if (node.running) {
+		if (this.running) {
 			return null
 		}
 		let icon = node.green
@@ -190,7 +225,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	}
 
 	private getLabel(node: Node): string {
-		return node.running ? "... " + node.name : node.name
+		return this.running ? "... " + node.name : node.name
 	}
 
 	diff(node: Node) {
