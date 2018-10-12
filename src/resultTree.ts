@@ -29,7 +29,9 @@ export function parseTestResult(line: string): (Result | string) {
 type ProgressListener = (current: number, testCount?: number) => void
 
 export class ResultTree {
-    private readonly _running: string = "Running ..."
+    private readonly DISABLED: string = "(Enable, to run tests on saved files.)"
+    private readonly ENABLED: string = "(Running tests on saved files.)"
+    private readonly RUNNING: string = "(Running tests ...)"
 
     private _tests: Result[] = []
     private _root: Node = new Node('')
@@ -38,7 +40,10 @@ export class ResultTree {
     private _progress: ProgressListener = () => { }
     private count: number = 0
 
-    constructor(public readonly path?: string) {
+    constructor(enabled?: boolean, public readonly path?: string) {
+        if (!path) {
+            this._root.subs = [new Node(enabled ? this.ENABLED : this.DISABLED)]
+        }
     }
 
     set progress(progress: ProgressListener) {
@@ -47,8 +52,7 @@ export class ResultTree {
 
     private start(): void {
         this._tests = []
-        this._root.subs = [new Node(this._running)]
-
+        this._root.subs = [new Node(this.RUNNING)]
     }
 
     private complete(): void {
@@ -121,7 +125,6 @@ export class Node {
     result?: Result
     private _messages: string[] = []
     private parent?: Node
-    private _running: boolean = false
 
     constructor(public name: string, messages?: string[]) {
         if (messages) {
@@ -129,13 +132,12 @@ export class Node {
         }
     }
 
-    addResult(result: Result, messages: string[]): Node {
+    addResult(result: Result, messages: string[]): void {
         let labels: string[] = []
         labels = labels.concat(result.labels)
-        let ret = this.add(labels, result)
-        ret.addMessages(messages)
-        ret.running = false
-        return ret
+        this
+            .add(labels, result)
+            .addMessages(messages)
     }
 
     addChild(child: Node): void {
@@ -150,22 +152,11 @@ export class Node {
         return [this.name]
     }
 
-    get running(): boolean {
-        return this._running
-    }
-
-    set running(toggle: boolean) {
-        if (this._running == toggle) {
-            return
-        }
-        this._running = toggle
-        if (toggle) {
-            this.subs.forEach(sub => sub.running = toggle)
-        }
-    }
-
     get id(): string {
-        return this.path.join("/") + (this.green ? "1" : "0") + (this.running ? "." : "")
+        // return (this.running ? "." : "")
+        //     + (this.green ? "1" : "0")
+        //     + this.path.join("/")
+        return this.path.join("/")
     }
 
     private addMessages(messages: string[]): void {
