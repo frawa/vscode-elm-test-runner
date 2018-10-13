@@ -14,6 +14,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	private _running: boolean = false
 	private _skipped: number = 0
 
+	private _workspaceFolder?: vscode.WorkspaceFolder
 	private tree: ResultTree = new ResultTree(this.enabled)
 
 	constructor(private context: vscode.ExtensionContext, private outputChannel: vscode.OutputChannel) {
@@ -43,16 +44,16 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	private enable(): void {
 		this.enabled = true
 		this._running = false
-		let unique = this.getUniqueWorkspaceFolderPath()
+		let unique = this.getUniqueWorkspaceFolder()
 		if (unique) {
-			this.path = unique
+			this.workspaceFolder = unique
 			this.runElmTest()
 		}
 	}
 
-	private getUniqueWorkspaceFolderPath(): string | undefined {
+	private getUniqueWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
 		if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length == 1) {
-			return vscode.workspace.workspaceFolders[0].uri.fsPath
+			return vscode.workspace.workspaceFolders[0]
 		}
 		return undefined
 	}
@@ -62,12 +63,15 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 			return
 		}
 		this.enabled = false
+		this._workspaceFolder = undefined
 		this.tree = new ResultTree(this.enabled)
 		this._onDidChangeTreeData.fire();
 	}
 
-	private set path(path: string) {
-		if (path != this.tree.path) {
+	private set workspaceFolder(folder: vscode.WorkspaceFolder) {
+		if (folder != this._workspaceFolder) {
+			this._workspaceFolder = folder
+			let path = folder.uri.fsPath
 			this.tree = new ResultTree(this.enabled, path)
 		}
 	}
@@ -91,13 +95,13 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		return this._running
 	}
 
-	private needToSkip(path: string): boolean {
+	private needToSkip(folder: vscode.WorkspaceFolder): boolean {
 		if (this._running) {
-			if (this.tree.path == path) {
+			if (this.workspaceFolder == folder) {
 				this._skipped++
 			} else {
 				// while running, ignore triggers for other workspaces
-				console.warn(`Running Elm tests in ${this.tree.path}, ignoring ${path}. Please try again later.`)
+				console.warn(`Running Elm tests in ${this.workspaceFolder.name}, ignoring ${folder.name}. Please try again later.`)
 			}
 			return true
 		}
@@ -130,42 +134,15 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		});
 	}
 
-	getOrCreateTerminal(name: string): vscode.Terminal {
-		const terminals = vscode.window.terminals;
-		const found = terminals.find(t => t.name == name)
-
-		if (found) {
-			return found
-		}
-
-		let terminal = vscode.window.createTerminal({
-			name: name,
-			cwd: this.tree.path
-			// env: process.env 
-		});
-
-		(<any>terminal).onDidWriteData((data: string) => {
-			if (data.indexOf('TEST RUN PASSED') > -1 || data.indexOf('TEST RUN FAILED') > -1) {
-				this.runElmTestAgain();
-			}
-			if (data.indexOf('Compilation failed') > -1) {
-				this.running = false
-			}
-		})
-
-		return terminal
-	}
-
 	runElmTestOnSave(doc: vscode.TextDocument) {
 		let folder = vscode.workspace.getWorkspaceFolder(doc.uri)
 		if (!folder) {
 			return
 		}
-		let path = folder.uri.fsPath
-		if (this.needToSkip(path)) {
+		if (this.needToSkip(folder)) {
 			return
 		}
-		this.path = path
+		this.workspaceFolder = folder
 		this.runElmTest()
 	}
 
@@ -174,13 +151,30 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 			return
 		}
 
+		if (!this._workspaceFolder) {
+			return
+		}
+
 		this.running = true
 
-		let terminal = this.getOrCreateTerminal('Elm Test Run')
+		let kind: vscode.TaskDefinition = {
+			type: 'elm-test'
+		};
+		let task = new vscode.Task(kind,
+			this._workspaceFolder,
+			'Run Elm Test', 'Elm Test Run',
+			new vscode.ShellExecution(`elm test`, {
+				cwd: this.tree.path
+			}),
+			"elm")
+		task.group = vscode.TaskGroup.Test
+		task.presentationOptions = { echo: true, focus: true }
 
-		terminal.sendText(`cd ${this.tree.path}`)
-		terminal.sendText("elm test")
-		terminal.show()
+		vscode.tasks
+			.executeTask(task)
+			.then((_) => this.runElmTestAgain(),
+				(reason) => console.log("Run Elm Test Task failed", reason)
+			)
 	}
 
 	getChildren(node?: Node): Thenable<Node[]> {

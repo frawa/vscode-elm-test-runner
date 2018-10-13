@@ -36,8 +36,8 @@
                 "command": "elmTestRunner.toggle",
                 "title": "Enable/Disable Elm Tests",
                 "icon": {
-                    "light": "resources/light/outline-toggle_on-24px.svg", 
-                    "dark": "resources/dark/outline-toggle_on-24px.svg" 
+                    "light": "resources/light/outline-toggle_on-24px.svg",
+                    "dark": "resources/dark/outline-toggle_on-24px.svg"
                 }
             },
             {
@@ -72,7 +72,42 @@
                     "group": "inline"
                 }
             ]
-        }
+        },
+        "taskDefinitions": [
+            {
+                "type": "elm-test",
+                "properties": {
+                }
+            }
+        ],
+        "problemMatchers": [
+            {
+                "name": "elm",
+                "severity": "error",
+                "fileLocation": "absolute",
+                "pattern": [
+                    {
+                        "regexp": "^--\\s(.*)\\s-\\s(.*\\.elm)$",
+                        "code": 1,
+                        "file": 2
+                    },
+                    {
+                        "regexp": "^$"
+                    },
+                    {
+                        "regexp": "^(.+)\\.$",
+                        "message": 1
+                    },
+                    {
+                        "regexp": "^$"
+                    },
+                    {
+                        "regexp": "^(\\d+)|",
+                        "line": 1
+                    }
+                ]
+            }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
