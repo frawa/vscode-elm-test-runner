@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const onSave = vscode.workspace.onDidSaveTextDocument((doc: vscode.TextDocument) => {
         if (doc.languageId == "elm") {
-            elmTestsProvider.runElmTestOnce()
+            elmTestsProvider.runElmTestOnSave(doc)
         }
     });
 

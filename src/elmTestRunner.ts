@@ -17,7 +17,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	private tree: ResultTree = new ResultTree(this.enabled)
 
 	constructor(private context: vscode.ExtensionContext, private outputChannel: vscode.OutputChannel) {
-		this.runElmTestOnce()
+		this.enable()
 	}
 
 	private out(lines: string[]): void {
@@ -41,12 +41,20 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	}
 
 	private enable(): void {
-		if (this.enabled) {
-			return
-		}
 		this.enabled = true
 		this._running = false
-		this.runElmTestOnce()
+		let unique = this.getUniqueWorkspaceFolderPath()
+		if (unique) {
+			this.path = unique
+			this.runElmTest()
+		}
+	}
+
+	private getUniqueWorkspaceFolderPath(): string | undefined {
+		if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length == 1) {
+			return vscode.workspace.workspaceFolders[0].uri.fsPath
+		}
+		return undefined
 	}
 
 	private disable(): void {
@@ -58,6 +66,12 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		this._onDidChangeTreeData.fire();
 	}
 
+	private set path(path: string) {
+		if (path != this.tree.path) {
+			this.tree = new ResultTree(this.enabled, path)
+		}
+	}
+
 	private set running(toggle: boolean) {
 		if (this._running == toggle) {
 			return
@@ -66,13 +80,9 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		this._running = toggle
 		if (toggle) {
 			this._skipped = 0
-			if (!this.tree.path) {
-				let path = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath
-				this.tree = new ResultTree(this.enabled, path)
-			}
 		} else if (this._skipped > 0) {
 			console.info(`Catching up ${this._skipped} triggers.`)
-			setTimeout(() => this.runElmTestOnce(), 500)
+			setTimeout(() => this.runElmTest(), 500)
 		}
 		this._onDidChangeTreeData.fire();
 	}
@@ -81,9 +91,14 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		return this._running
 	}
 
-	private get needToSkip(): boolean {
+	private needToSkip(path: string): boolean {
 		if (this._running) {
-			this._skipped++
+			if (this.tree.path == path) {
+				this._skipped++
+			} else {
+				// while running, ignore triggers for other workspaces
+				console.warn(`Running Elm tests in ${this.tree.path}, ignoring ${path}. Please try again later.`)
+			}
 			return true
 		}
 		return false
@@ -141,12 +156,21 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		return terminal
 	}
 
-	runElmTestOnce() {
-		if (!this.enabled) {
+	runElmTestOnSave(doc: vscode.TextDocument) {
+		let folder = vscode.workspace.getWorkspaceFolder(doc.uri)
+		if (!folder) {
 			return
 		}
+		let path = folder.uri.fsPath
+		if (this.needToSkip(path)) {
+			return
+		}
+		this.path = path
+		this.runElmTest()
+	}
 
-		if (this.needToSkip) {
+	private runElmTest() {
+		if (!this.enabled) {
 			return
 		}
 
@@ -154,6 +178,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 		let terminal = this.getOrCreateTerminal('Elm Test Run')
 
+		terminal.sendText(`cd ${this.tree.path}`)
 		terminal.sendText("elm test")
 		terminal.show()
 	}
