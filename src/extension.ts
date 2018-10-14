@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
     const commandRegistrations = vscode.Disposable.from(
         vscode.commands.registerCommand('elmTestRunner.toggle', () => elmTestsProvider.toggle()),
         vscode.commands.registerCommand('elmTestRunner.diff', node => elmTestsProvider.diff(node)),
-        vscode.commands.registerCommand('extension.openElmTestSelection', (messages, module, testName) => elmTestsProvider.select(messages, module, testName)),
+        vscode.commands.registerCommand('extension.openElmTestSelection', (messages, folderPath, module, testName) => elmTestsProvider.select(messages, folderPath, module, testName)),
     )
 
     const onSave = vscode.workspace.onDidSaveTextDocument((doc: vscode.TextDocument) => {
