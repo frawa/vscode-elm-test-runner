@@ -117,6 +117,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 		elm.on('close', () => {
 			this._runState.runCompleted(path)
+			this._onDidChangeTreeData.fire()
 		});
 	}
 

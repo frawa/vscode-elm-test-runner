@@ -77,7 +77,7 @@ export class RunState {
         if (roots.length == 1) {
             return roots[0]
         }
-        let multi = new Node("")
+        let multi = new Node("Multi")
         multi.subs = roots
         return multi
     }
