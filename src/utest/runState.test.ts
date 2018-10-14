@@ -4,7 +4,11 @@ import { RunState } from '../runState'
 
 describe('Run State Tests', () => {
 
-    let runState = new RunState(true)
+    var runState: RunState = new RunState(true)
+
+    beforeEach(() => {
+        runState = new RunState(true)
+    })
 
     it('is enabled', () => {
         expect(runState.enabled).to.be.true
@@ -51,7 +55,10 @@ describe('Run State Tests', () => {
 
     it('get all results root, multiple', () => {
         runState.runFolder("myname", "my/path")
+        runState.runCompleted("my/path")
         runState.runFolder("myname2", "my/path2")
+        runState.runCompleted("my/path2")
+
         let root = runState.getAllResults()
 
         expect(root).to.be.not.undefined
@@ -60,4 +67,53 @@ describe('Run State Tests', () => {
         expect(root.subs[0].name).to.eq("myname")
         expect(root.subs[1].name).to.eq("myname2")
     })
+
+    it('only one active run', () => {
+        var countRuns = 0
+        let runner = () => {
+            countRuns++
+        }
+
+        runState.runner = runner
+
+        runState.runFolder("myname", "my/path")
+        expect(runState.running).to.be.true
+        expect(countRuns).to.eq(1)
+
+        runState.runFolder("myname", "my/path")
+        expect(runState.running).to.be.true
+        expect(countRuns).to.eq(1)
+
+        runState.runCompleted("my/path")
+        expect(runState.running).to.be.true
+        expect(countRuns).to.eq(2)
+
+        runState.runCompleted("my/path")
+        expect(runState.running).to.be.false
+    })
+
+    it('push/pop', () => {
+        runState.push("myname", "my/path")
+        let next = runState.pop()
+        expect(next).not.to.be.undefined
+        expect(next).to.eql(["myname", "my/path"])
+    })
+
+    it('push/pop, remove duplicates', () => {
+        runState.push("myname", "my/path")
+        runState.push("myname2", "my/path2")
+        runState.push("myname", "my/path")
+
+        let next = runState.pop()
+        expect(next).not.to.be.undefined
+        expect(next).to.eql(["myname", "my/path"])
+
+        let next2 = runState.pop()
+        expect(next2).not.to.be.undefined
+        expect(next2).to.eql(["myname2", "my/path2"])
+
+        let next3 = runState.pop()
+        expect(next3).to.be.undefined
+    })
+
 })

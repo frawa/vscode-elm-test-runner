@@ -6,7 +6,9 @@ export class RunState {
 
     private _running: boolean = false
     private _runner: RunnerFun = () => { }
+
     private _trees: Map<string, ResultTree> = new Map()
+    private _stack: Array<[string, string]> = new Array()
 
     constructor(public enabled: boolean) {
     }
@@ -24,14 +26,26 @@ export class RunState {
     }
 
     public runFolder(name: string, path: string): void {
+        if (this._running) {
+            this.push(name, path)
+            return
+        }
+
         this._running = true
         let tree = this.getOrCreateResultTree(path)
+
         tree.root.name = name
         this._runner(path)
     }
 
     public runCompleted(path: string): void {
         this._running = false
+
+        let next = this.pop()
+        if (next) {
+            let [name, path] = next
+            this.runFolder(name, path)
+        }
     }
 
     private getOrCreateResultTree(path: string): ResultTree {
@@ -57,5 +71,19 @@ export class RunState {
         let multi = new Node("")
         multi.subs = roots
         return multi
+    }
+
+    push(name: string, path: string): void {
+        this._stack.push([name, path])
+    }
+
+    pop(): [string, string] | undefined {
+        let next = this._stack.pop()
+        if (!next) {
+            return undefined
+        }
+        let path = next[1]
+        this._stack = this._stack.filter(([_, p]) => p != path)
+        return next
     }
 }
