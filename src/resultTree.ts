@@ -26,8 +26,6 @@ export function parseTestResult(line: string): (Result | string) {
     return result
 }
 
-type ProgressListener = (current: number, testCount?: number) => void
-
 export class ResultTree {
     private readonly DISABLED: string = "(Enable, to run tests on saved files.)"
     private readonly ENABLED: string = "(Running tests on saved files.)"
@@ -37,17 +35,11 @@ export class ResultTree {
     private _root: Node = new Node('')
 
     private _pendingMessages: string[] = []
-    private _progress: ProgressListener = () => { }
-    private count: number = 0
 
     constructor(enabled?: boolean, public readonly path?: string) {
         if (!path) {
             this._root.subs = [new Node(enabled ? this.ENABLED : this.DISABLED)]
         }
-    }
-
-    set progress(progress: ProgressListener) {
-        this._progress = progress
     }
 
     private start(): void {
@@ -95,15 +87,10 @@ export class ResultTree {
         if (result.event === 'testCompleted') {
             this._root.addResult(result, this.popMessages())
             this._tests.push(result)
-            this.count++
-            this._progress(this.count)
         } else if (result.event === 'runStart') {
             this.start();
-            this.count = 0
-            this._progress(0, result.testCount)
         } else if (result.event === 'runComplete') {
             this.complete()
-            this._progress(-1)
         }
     }
 
