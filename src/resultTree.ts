@@ -36,10 +36,8 @@ export class ResultTree {
 
     private _pendingMessages: string[] = []
 
-    constructor(enabled?: boolean, public readonly path?: string) {
-        if (!path) {
-            this._root.subs = [new Node(enabled ? this.ENABLED : this.DISABLED)]
-        }
+    constructor(enabled?: boolean) {
+        this._root.subs = [new Node(enabled ? this.ENABLED : this.DISABLED)]
     }
 
     private start(): void {
@@ -132,17 +130,19 @@ export class Node {
         child.parent = this
     }
 
+    get root(): Node {
+        return this.parent
+            ? this.parent.root
+            : this
+    }
+
     private get path(): string[] {
-        if (this.parent) {
-            return this.parent.path.concat(this.name)
-        }
-        return [this.name]
+        return this.parent
+            ? this.parent.path.concat(this.name)
+            : [this.name]
     }
 
     get id(): string {
-        // return (this.running ? "." : "")
-        //     + (this.green ? "1" : "0")
-        //     + this.path.join("/")
         return this.path.join("/")
     }
 
