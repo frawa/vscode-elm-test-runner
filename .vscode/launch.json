@@ -3,9 +3,8 @@
 // Hover to view descriptions of existing attributes.
 // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
 {
-	"version": "0.2.0",
+    "version": "0.2.0",
     "configurations": [
-
         {
             "name": "Extension",
             "type": "extensionHost",
@@ -33,15 +32,27 @@
             ],
             "preLaunchTask": "npm: watch"
         },
-		{
-			"name": "Run utests",
-			"type": "node",
+        {
+            "name": "Run utests",
+            "type": "node",
             "request": "launch",
-			"program": "${workspaceFolder}/node_modules/ts-mocha/bin/ts-mocha",
-			"stopOnEntry": false,
-			"args": ["-p", "${workspaceFolder}/", "${workspaceFolder}/src/utest/**/*.test.ts"],
-			//"cwd": "${workspaceFolder}",
-			"runtimeExecutable": null,
-		}
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "stopOnEntry": false,
+            "args": [
+                "--watch",
+                "-r",
+                "ts-node/register",
+                "./",
+                "--timeout",
+                "999999",
+                "--colors",
+                "${workspaceFolder}/src/utest/**/*.test.ts"
+            ],
+            //"cwd": "${workspaceFolder}",
+            "internalConsoleOptions": "neverOpen",
+            "console": "integratedTerminal",
+            "runtimeExecutable": null,
+            "protocol": "inspector"
+        }
     ]
 }
