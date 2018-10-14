@@ -7,7 +7,7 @@
         "type": "git",
         "url": " https://github.com/frawa/vscode-elm-test-runner.git"
     },
-    "version": "0.5.1",
+    "version": "0.5.2",
     "publisher": "FraWa",
     "engines": {
         "vscode": "^1.28.1"
@@ -116,7 +116,7 @@
         "postinstall": "node ./node_modules/vscode/bin/install",
         "test": "npm run compile && node ./node_modules/vscode/bin/test",
         "utest": "mocha -r ts-node/register ./ src/utest/**/*.test.ts",
-        "utest-watch": "ts-mocha --watch -p ./ src/utest/**/*.test.ts"
+        "utest-watch": "mocha --watch -r ts-node/register ./ src/utest/**/*.test.ts"
     },
     "devDependencies": {
         "@types/chai": "^4.1.2",
