@@ -84,7 +84,7 @@ describe('Run State Tests', () => {
         let root = runState.getAllResults()
 
         expect(root).to.be.not.undefined
-        expect(root.name).to.eq("")
+        expect(root.name).to.eq("Multi")
         expect(root.subs).to.have.length(2)
         expect(root.subs[0].name).to.eq("myname")
         expect(root.subs[1].name).to.eq("myname2")
