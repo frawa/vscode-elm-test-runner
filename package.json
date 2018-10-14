@@ -7,7 +7,7 @@
         "type": "git",
         "url": " https://github.com/frawa/vscode-elm-test-runner.git"
     },
-    "version": "0.5.2",
+    "version": "0.6.0",
     "publisher": "FraWa",
     "engines": {
         "vscode": "^1.28.1"
