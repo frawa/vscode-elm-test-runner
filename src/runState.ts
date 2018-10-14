@@ -21,11 +21,19 @@ export class RunState {
         this.enabled = false
     }
 
+    public enable(): void {
+        this.enabled = true
+    }
+
     public get running(): boolean {
         return this._running
     }
 
     public runFolder(name: string, path: string): void {
+        if ( !this.enabled) {
+            return
+        }
+
         if (this._running) {
             this.push(name, path)
             return
@@ -33,8 +41,8 @@ export class RunState {
 
         this._running = true
         let tree = this.getOrCreateResultTree(path)
-
         tree.root.name = name
+
         this._runner(path)
     }
 
@@ -44,6 +52,7 @@ export class RunState {
         let next = this.pop()
         if (next) {
             let [name, path] = next
+			console.info(`Catching up runs in ${name}.`)
             this.runFolder(name, path)
         }
     }
@@ -51,7 +60,7 @@ export class RunState {
     private getOrCreateResultTree(path: string): ResultTree {
         var tree = this._trees.get(path)
         if (!tree) {
-            tree = new ResultTree(true, path)
+            tree = new ResultTree(true)
             this._trees.set(path, tree)
         }
         return tree

@@ -19,6 +19,13 @@ describe('Run State Tests', () => {
         expect(runState.enabled).to.be.false
     })
 
+    it('can enable', () => {
+        runState.disable()
+        expect(runState.enabled).to.be.false
+        runState.enable()
+        expect(runState.enabled).to.be.true
+    })
+
     it('is not running', () => {
         expect(runState.running).to.be.false
     })
@@ -35,6 +42,21 @@ describe('Run State Tests', () => {
         expect(runningPath).to.eq("my/path")
         runState.runCompleted(runningPath)
         expect(runState.running).to.be.false
+    })
+
+    it('do not run when disabled', () => {
+        var runningPath: string = "nothing"
+        let runner = (path: string) => runningPath = path
+
+        runState.runner = runner
+
+        runState.disable()
+        expect(runState.enabled).to.be.false
+        expect(runState.running).to.be.false
+
+        runState.runFolder("myname", "my/path")
+        expect(runState.running).to.be.false
+        expect(runningPath).to.eq("nothing")
     })
 
     it('get one result tree', () => {
