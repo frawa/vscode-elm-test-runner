@@ -138,4 +138,14 @@ describe('Run State Tests', () => {
         expect(next3).to.be.undefined
     })
 
+    it('disable clears', () => {
+        runState.runFolder("myname", "my/path")
+        runState.runFolder("myname", "my/path")
+        runState.runCompleted("my/path")
+        expect(runState.getAllResults().subs).to.be.of.length(1)
+
+        runState.disable()
+        expect(runState.getAllResults().subs).to.be.of.length(0)
+    })
+
 })
