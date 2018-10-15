@@ -17,6 +17,12 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	constructor(private context: vscode.ExtensionContext, private outputChannel: vscode.OutputChannel) {
 		this._runState.runner = (path) => this.runElmTest(path)
 		this.enable()
+
+		vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+			if (this._runState.enabled) {
+				event.added.forEach(folder => this._runState.removeFolder(folder.uri.fsPath))
+			}
+		})
 	}
 
 	private out(lines: string[]): void {

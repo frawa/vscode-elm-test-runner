@@ -69,10 +69,14 @@ describe('Run State Tests', () => {
 
     it('get all results root, unique', () => {
         runState.runFolder("myname", "my/path")
+        runState.runCompleted("my/path")
         let root = runState.getAllResults()
 
         expect(root).to.be.not.undefined
-        expect(root.name).to.eq("myname")
+        expect(root.name).to.eq("Multi")
+        expect(root.subs).to.have.length(1)
+        expect(root.subs[0].name).to.eq("myname")
+        expect(root.subs[0].subs).to.have.length(0)
     })
 
     it('get all results root, multiple', () => {
@@ -146,6 +150,25 @@ describe('Run State Tests', () => {
 
         runState.disable()
         expect(runState.getAllResults().subs).to.be.of.length(0)
+    })
+
+    it('remove folder', () => {
+        runState.runFolder("myname", "my/path")
+        runState.runCompleted("my/path")
+        runState.runFolder("myname2", "my/path2")
+        runState.runCompleted("my/path2")
+
+        let root = runState.getAllResults()
+
+        expect(root.subs).to.have.length(2)
+        expect(root.subs[0].name).to.eq("myname")
+        expect(root.subs[1].name).to.eq("myname2")
+
+        runState.removeFolder("my/path2")
+
+        let root2 = runState.getAllResults()
+        expect(root2.subs).to.have.length(1)
+        expect(root2.subs[0].name).to.eq("myname")
     })
 
 })

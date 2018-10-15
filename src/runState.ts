@@ -32,7 +32,7 @@ export class RunState {
     }
 
     public runFolder(name: string, path: string): void {
-        if ( !this.enabled) {
+        if (!this.enabled) {
             return
         }
 
@@ -50,11 +50,12 @@ export class RunState {
 
     public runCompleted(path: string): void {
         this._running = false
-
+        this.getOrCreateResultTree(path).complete()
+        
         let next = this.pop()
         if (next) {
             let [name, path] = next
-			console.info(`Catching up runs in ${name}.`)
+            console.info(`Catching up runs in ${name}.`)
             this.runFolder(name, path)
         }
     }
@@ -76,9 +77,6 @@ export class RunState {
         let roots: Node[] = Array.from(this._trees.values())
             .map((tree) => tree.root)
 
-        if (roots.length == 1) {
-            return roots[0]
-        }
         let multi = new Node("Multi")
         multi.subs = roots
         return multi
@@ -94,7 +92,16 @@ export class RunState {
             return undefined
         }
         let path = next[1]
-        this._stack = this._stack.filter(([_, p]) => p != path)
+        this.deleteFromStack(path)
         return next
+    }
+
+    private deleteFromStack(path: string): void {
+        this._stack = this._stack.filter(([_, p]) => p != path)
+    }
+
+    removeFolder(path: string): void {
+        this._trees.delete(path)
+        this.deleteFromStack(path)
     }
 }

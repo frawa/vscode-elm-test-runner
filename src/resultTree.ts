@@ -35,17 +35,28 @@ export class ResultTree {
     private _root: Node = new Node('')
 
     private _pendingMessages: string[] = []
+    private _started = false
 
     constructor(enabled?: boolean) {
         this._root.subs = [new Node(enabled ? this.ENABLED : this.DISABLED)]
     }
 
     private start(): void {
+        this._started = true
         this._tests = []
         this._root.subs = [new Node(this.RUNNING)]
     }
 
-    private complete(): void {
+    complete(): void {
+        if (!this._started) {
+            if (this._root.subs.length > 0 &&
+                (this._root.subs[0].name === this.ENABLED
+                    || this._root.subs[0].name === this.DISABLED)) {
+                this._root.subs.shift()
+            }
+            return
+        }
+        this._started = false
         this._root.subs.shift()
         let dangeling = this.popMessages()
         if (dangeling.length > 0) {
