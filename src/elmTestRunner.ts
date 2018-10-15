@@ -69,6 +69,11 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		this._runState.runFolder(folder.name, folder.uri.fsPath)
 	}
 
+	private runComplete(path:string) :void {
+		this._runState.runCompleted(path)
+		this._onDidChangeTreeData.fire()		
+	}
+
 	private async runElmTest(path: string) {
 		let folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(path))
 		if (folder) {
@@ -92,9 +97,20 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 		vscode.tasks
 			.executeTask(task)
-			.then((_) => this.completeElmTest_(folder),
+			.then(
+				() => { },
 				(reason) => console.log("Run Elm Test Task failed", reason)
 			)
+
+		vscode.tasks.onDidEndTaskProcess((event) => {
+			if (task === event.execution.task) {
+				if (event.exitCode != 1) {
+					this.completeElmTest_(folder)
+				} else {
+					this.runComplete(folder.uri.fsPath)
+				}
+			}
+		})
 	}
 
 	private completeElmTest_(folder: vscode.WorkspaceFolder) {
@@ -122,8 +138,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		})
 
 		elm.on('close', () => {
-			this._runState.runCompleted(path)
-			this._onDidChangeTreeData.fire()
+			this.runComplete(path)
 		});
 	}
 
