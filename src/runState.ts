@@ -19,6 +19,8 @@ export class RunState {
 
     public disable(): void {
         this.enabled = false
+        this._trees = new Map()
+        this._stack = new Array()
     }
 
     public enable(): void {
