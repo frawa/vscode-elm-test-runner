@@ -20,7 +20,14 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 		vscode.workspace.onDidChangeWorkspaceFolders((event) => {
 			if (this._runState.enabled) {
-				event.added.forEach(folder => this._runState.removeFolder(folder.uri.fsPath))
+				if (event.added.length > 0) {
+					event.added.forEach(folder => this._runState.runFolder(folder.name, folder.uri.fsPath))
+					this._onDidChangeTreeData.fire()
+				}
+				if (event.removed.length > 0) {
+					event.removed.forEach(folder => this._runState.removeFolder(folder.uri.fsPath))
+					this._onDidChangeTreeData.fire()
+				}
 			}
 		})
 	}
@@ -69,9 +76,9 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		this._runState.runFolder(folder.name, folder.uri.fsPath)
 	}
 
-	private runComplete(path:string) :void {
+	private runComplete(path: string): void {
 		this._runState.runCompleted(path)
-		this._onDidChangeTreeData.fire()		
+		this._onDidChangeTreeData.fire()
 	}
 
 	private async runElmTest(path: string) {
