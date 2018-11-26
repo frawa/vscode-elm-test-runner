@@ -12,3 +12,4 @@ Running Elm tests in VS Code.
 - Show progress in terminal.
 - Support multiple workspace folders with Elm code.
 - Disable/enable running tests.
+- Support locally installed elm-test/elm binaries (for Elm 0.19).
