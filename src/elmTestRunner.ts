@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
 
 import { RunState } from './runState';
 import { Node } from './resultTree';
@@ -88,15 +89,34 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		}
 	}
 
+	private findLocalNpmBinary(binary: string, projectRoot: string): string | undefined {
+		let binaryPath = path.join(projectRoot, 'node_modules', '.bin', binary)
+		return fs.existsSync(binaryPath) ? binaryPath : undefined
+	}
+
+	private elmTestArgs(projectFolder: string): string[] {
+		let elmTestBinary = this.findLocalNpmBinary('elm-test', projectFolder)
+		let elmBinary = this.findLocalNpmBinary('elm', projectFolder)
+
+		return [elmTestBinary ? elmTestBinary : 'elm-test']
+			.concat(elmBinary ? ['--compiler', elmBinary] : [])
+	}
+
 	private runElmTest_(folder: vscode.WorkspaceFolder) {
 		let kind: vscode.TaskDefinition = {
 			type: 'elm-test'
 		};
+
+		let cwdPath = folder.uri.fsPath
+		let args = this.elmTestArgs(cwdPath)
+
+		console.log("Running Elm Tests",args)
+
 		let task = new vscode.Task(kind,
 			folder,
 			'Run Elm Test', 'Elm Test Run',
-			new vscode.ShellExecution(`elm test`, {
-				cwd: folder.uri.fsPath
+			new vscode.ShellExecution(args[0], args.slice(1), {
+				cwd: cwdPath
 			}),
 			"elm")
 		task.group = vscode.TaskGroup.Test
@@ -121,11 +141,13 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	}
 
 	private completeElmTest_(folder: vscode.WorkspaceFolder) {
-		let path = folder.uri.fsPath
-		let tree = this._runState.getResultTree(path)
+		let cwdPath = folder.uri.fsPath
+		let tree = this._runState.getResultTree(cwdPath)
 
-		let elm = child_process.spawn('elm', ['test', '--report', 'json'], {
-			cwd: path,
+		let args = this.elmTestArgs(cwdPath)
+
+		let elm = child_process.spawn(args[0], args.slice(1).concat(['--report', 'json']), {
+			cwd: cwdPath,
 			env: process.env
 		})
 
@@ -145,7 +167,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		})
 
 		elm.on('close', () => {
-			this.runComplete(path)
+			this.runComplete(cwdPath)
 		});
 	}
 
