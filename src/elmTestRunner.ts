@@ -96,7 +96,10 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 	private elmTestArgs(projectFolder: string): string[] {
 		let elmTestBinary = this.findLocalNpmBinary('elm-test', projectFolder)
-		let elmBinary = this.findLocalNpmBinary('elm', projectFolder)
+		let elmMakeBinary = this.findLocalNpmBinary('elm-make', projectFolder)
+		let elmBinary = elmMakeBinary
+			? elmMakeBinary
+			: this.findLocalNpmBinary('elm', projectFolder)
 
 		return [elmTestBinary ? elmTestBinary : 'elm-test']
 			.concat(elmBinary ? ['--compiler', elmBinary] : [])
@@ -110,7 +113,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		let cwdPath = folder.uri.fsPath
 		let args = this.elmTestArgs(cwdPath)
 
-		console.log("Running Elm Tests",args)
+		console.log("Running Elm Tests", args)
 
 		let task = new vscode.Task(kind,
 			folder,
