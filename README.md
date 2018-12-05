@@ -13,3 +13,4 @@ Running Elm tests in VS Code.
 - Support multiple workspace folders with Elm code.
 - Disable/enable running tests.
 - Support locally installed elm-test/elm binaries (for Elm 0.19).
+- Fix to support locally installed elm-make (for Elm 0.18).
