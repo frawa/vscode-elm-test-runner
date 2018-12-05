@@ -115,7 +115,9 @@
         "postinstall": "node ./node_modules/vscode/bin/install",
         "test": "npm run compile && node ./node_modules/vscode/bin/test",
         "utest": "mocha -r ts-node/register ./ src/utest/**/*.test.ts",
-        "utest-watch": "mocha --watch -r ts-node/register ./ src/utest/**/*.test.ts"
+        "utest-watch": "mocha --watch -r ts-node/register ./ src/utest/**/*.test.ts",
+        "vsce-package": "vsce package --yarn",
+        "vsce-publish": "vsce publish --yarn"
     },
     "devDependencies": {
         "@types/chai": "^4.1.2",
