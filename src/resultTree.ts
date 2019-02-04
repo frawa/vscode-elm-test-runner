@@ -20,7 +20,8 @@ export interface Result {
 export function parseTestResult(line: string): (Result | string) {
     var errors: json.ParseError[] = []
     var result: Result = json.parse(line, errors)
-    if (errors.length > 0) {
+    var nojson = errors.every(e => e.error == json.ParseErrorCode.InvalidSymbol)
+    if (errors.length > 0 && nojson) {
         return line
     }
     return result
