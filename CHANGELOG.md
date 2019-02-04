@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [Unreleased]
 - Initial release
 
+## [0.7.2] - 2019-02-04
+### Fixed
+- [#21] Fix Json parsing of result, to avoid pending 'Messages' node in result tree.
+
 ## [0.6.1] - 2018-10-15
 ### Fixed
 - [#20] Have only one elm test task running at the time.
