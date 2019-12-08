@@ -36,7 +36,9 @@ jobs:
             - v1-dependencies-{{ checksum "package-lock.json" }}
 
       # run tests!
-      - run: |
-        yarn utest
-        yarn test
+      - run:
+          name: test
+          command: |
+            yarn utest
+            yarn test
 
