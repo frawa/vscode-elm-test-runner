@@ -51,7 +51,7 @@ export class RunState {
     public runCompleted(path: string): void {
         this._running = false
         this.getOrCreateResultTree(path).complete()
-        
+
         let next = this.pop()
         if (next) {
             let [name, path] = next
@@ -97,7 +97,7 @@ export class RunState {
     }
 
     private deleteFromStack(path: string): void {
-        this._stack = this._stack.filter(([_, p]) => p != path)
+        this._stack = this._stack.filter(([_, p]) => p !== path)
     }
 
     removeFolder(path: string): void {

@@ -11,23 +11,23 @@ describe('Run State Tests', () => {
     })
 
     it('is enabled', () => {
-        expect(runState.enabled).to.be.true
+        expect(runState.enabled).to.eq(true)
     })
 
     it('can disable', () => {
         runState.disable()
-        expect(runState.enabled).to.be.false
+        expect(runState.enabled).to.eq(false)
     })
 
     it('can enable', () => {
         runState.disable()
-        expect(runState.enabled).to.be.false
+        expect(runState.enabled).to.eq(false)
         runState.enable()
-        expect(runState.enabled).to.be.true
+        expect(runState.enabled).to.eq(true)
     })
 
     it('is not running', () => {
-        expect(runState.running).to.be.false
+        expect(runState.running).to.eq(false)
     })
 
     it('run on folder', () => {
@@ -36,12 +36,12 @@ describe('Run State Tests', () => {
 
         runState.runner = runner
 
-        expect(runState.running).to.be.false
+        expect(runState.running).to.eq(false)
         runState.runFolder("myname", "my/path")
-        expect(runState.running).to.be.true
+        expect(runState.running).to.eq(true)
         expect(runningPath).to.eq("my/path")
         runState.runCompleted(runningPath)
-        expect(runState.running).to.be.false
+        expect(runState.running).to.eq(false)
     })
 
     it('do not run when disabled', () => {
@@ -51,11 +51,11 @@ describe('Run State Tests', () => {
         runState.runner = runner
 
         runState.disable()
-        expect(runState.enabled).to.be.false
-        expect(runState.running).to.be.false
+        expect(runState.enabled).to.eq(false)
+        expect(runState.running).to.eq(false)
 
         runState.runFolder("myname", "my/path")
-        expect(runState.running).to.be.false
+        expect(runState.running).to.eq(false)
         expect(runningPath).to.eq("nothing")
     })
 
@@ -63,7 +63,7 @@ describe('Run State Tests', () => {
         runState.runFolder("myname", "my/path")
         let tree = runState.getResultTree("my/path")
 
-        expect(tree).to.be.not.undefined
+        expect(tree).to.not.eq(undefined)
         expect(tree.root.name).to.eq("myname")
     })
 
@@ -72,7 +72,7 @@ describe('Run State Tests', () => {
         runState.runCompleted("my/path")
         let root = runState.getAllResults()
 
-        expect(root).to.be.not.undefined
+        expect(root).to.not.eq(undefined)
         expect(root.name).to.eq("Multi")
         expect(root.subs).to.have.length(1)
         expect(root.subs[0].name).to.eq("myname")
@@ -87,7 +87,7 @@ describe('Run State Tests', () => {
 
         let root = runState.getAllResults()
 
-        expect(root).to.be.not.undefined
+        expect(root).to.not.eq(undefined)
         expect(root.name).to.eq("Multi")
         expect(root.subs).to.have.length(2)
         expect(root.subs[0].name).to.eq("myname")
@@ -103,25 +103,25 @@ describe('Run State Tests', () => {
         runState.runner = runner
 
         runState.runFolder("myname", "my/path")
-        expect(runState.running).to.be.true
+        expect(runState.running).to.eq(true)
         expect(countRuns).to.eq(1)
 
         runState.runFolder("myname", "my/path")
-        expect(runState.running).to.be.true
+        expect(runState.running).to.eq(true)
         expect(countRuns).to.eq(1)
 
         runState.runCompleted("my/path")
-        expect(runState.running).to.be.true
+        expect(runState.running).to.eq(true)
         expect(countRuns).to.eq(2)
 
         runState.runCompleted("my/path")
-        expect(runState.running).to.be.false
+        expect(runState.running).to.eq(false)
     })
 
     it('push/pop', () => {
         runState.push("myname", "my/path")
         let next = runState.pop()
-        expect(next).not.to.be.undefined
+        expect(next).not.to.eq(undefined)
         expect(next).to.eql(["myname", "my/path"])
     })
 
@@ -131,15 +131,15 @@ describe('Run State Tests', () => {
         runState.push("myname", "my/path")
 
         let next = runState.pop()
-        expect(next).not.to.be.undefined
+        expect(next).not.to.eq(undefined)
         expect(next).to.eql(["myname", "my/path"])
 
         let next2 = runState.pop()
-        expect(next2).not.to.be.undefined
+        expect(next2).not.to.eq(undefined)
         expect(next2).to.eql(["myname2", "my/path2"])
 
         let next3 = runState.pop()
-        expect(next3).to.be.undefined
+        expect(next3).to.eq(undefined)
     })
 
     it('disable clears', () => {

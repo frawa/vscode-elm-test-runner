@@ -63,7 +63,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	}
 
 	private getUniqueWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
-		if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length == 1) {
+		if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length === 1) {
 			return vscode.workspace.workspaceFolders[0]
 		}
 		return undefined
@@ -134,7 +134,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 
 		vscode.tasks.onDidEndTaskProcess((event) => {
 			if (task === event.execution.task) {
-				if (event.exitCode != 1) {
+				if (event.exitCode !== 1) {
 					this.completeElmTest_(folder)
 				} else {
 					this.runComplete(folder.uri.fsPath)
@@ -221,7 +221,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 		let name = node.root.name
 		if (vscode.workspace.workspaceFolders) {
 			let folder = vscode.workspace.workspaceFolders
-				.find((folder) => folder.name == name)
+				.find((folder) => folder.name === name)
 			if (folder) {
 				return folder.uri.fsPath
 			}
