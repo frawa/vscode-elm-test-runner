@@ -82,10 +82,10 @@ describe('Result Tree Tests', () => {
             // expect(results.root).to.eql({})
             expect(results.root.subs).to.be.of.length(2)
             expect(results.root.subs[1].name).to.eql('suite')
-            expect(results.root.subs[1].result).to.be.undefined
+            expect(results.root.subs[1].result).to.eq(undefined)
             expect(results.root.subs[1].subs).to.of.length(1)
             expect(results.root.subs[1].subs[0].name).to.eql('todo comment')
-            expect(results.root.subs[1].subs[0].result).not.to.be.undefined
+            expect(results.root.subs[1].subs[0].result).not.to.eq(undefined)
             let result = results.root.subs[1].subs[0].result
             if (result) {
                 expect(result.labels).to.eql(['suite', 'todo comment'])
@@ -299,7 +299,7 @@ describe('Result Tree Tests', () => {
             root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('test')
-            expect(root.subs[0].canDiff).to.be.false
+            expect(root.subs[0].canDiff).to.eq(false)
         })
 
         it('can diff', () => {
@@ -321,7 +321,7 @@ describe('Result Tree Tests', () => {
             root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('test')
-            expect(root.subs[0].canDiff).to.true
+            expect(root.subs[0].canDiff).to.eq(true)
             expect(root.subs[0].diff).to.eql([
                 'expected',
                 'actual'
@@ -347,7 +347,7 @@ describe('Result Tree Tests', () => {
             root.addResult(result, [])
             expect(root.subs).to.be.length(1)
             expect(root.subs[0].name).to.eql('test')
-            expect(root.subs[0].canDiff).to.true
+            expect(root.subs[0].canDiff).to.eq(true)
             expect(root.subs[0].diff).to.eql([
                 'expected',
                 'actual\nvalue'
