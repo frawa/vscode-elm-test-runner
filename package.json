@@ -111,6 +111,8 @@
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
+        "lint": "tslint -p .",
+        "lintfix": "tslint --fix -p .",
         "watch": "tsc -watch -p ./",
         "postinstall": "node ./node_modules/vscode/bin/install",
         "test": "npm run compile && node ./node_modules/vscode/bin/test",
@@ -120,17 +122,17 @@
         "vsce-publish": "vsce publish --yarn"
     },
     "devDependencies": {
-        "@types/chai": "^4.1.2",
-        "@types/mocha": "^5.2.5",
-        "@types/node": "^8.10.25",
+        "@types/chai": "^4.2.12",
+        "@types/mocha": "^8.0.3",
+        "@types/node": "^14.6.0",
         "chai": "^4.2.0",
-        "ts-node": "^7.0.1",
-        "tslint": "^5.8.0",
-        "typescript": "^3.1.2",
-        "vsce": "^1.53.0",
-        "vscode": "^1.1.21"
+        "ts-node": "^9.0.0",
+        "tslint": "^6.1.3",
+        "typescript": "^4.0.2",
+        "vsce": "^1.79.2",
+        "vscode": "^1.1.37"
     },
     "dependencies": {
-        "jsonc-parser": "^2.0.2"
+        "jsonc-parser": "^2.3.0"
     }
 }
