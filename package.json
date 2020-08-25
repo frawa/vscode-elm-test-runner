@@ -21,6 +21,9 @@
         "onLanguage:elm"
     ],
     "main": "./out/extension",
+    "extensionDependencies": [
+        "hbenl.vscode-test-explorer"
+    ],
     "contributes": {
         "viewsContainers": {
             "activitybar": [
@@ -125,6 +128,7 @@
         "@types/chai": "^4.2.12",
         "@types/mocha": "^8.0.3",
         "@types/node": "^14.6.0",
+        "@types/vscode": "^1.48.0",
         "chai": "^4.2.0",
         "ts-node": "^9.0.0",
         "tslint": "^6.1.3",
@@ -133,6 +137,8 @@
         "vscode": "^1.1.37"
     },
     "dependencies": {
-        "jsonc-parser": "^2.3.0"
+        "jsonc-parser": "^2.3.0",
+        "vscode-test-adapter-api": "^1.9.0",
+        "vscode-test-adapter-util": "^0.7.1"
     }
 }

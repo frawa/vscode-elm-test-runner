@@ -85,7 +85,7 @@ export class ElmTestsProvider implements vscode.TreeDataProvider<Node> {
 	private async runElmTest(path: string) {
 		let folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(path))
 		if (folder) {
-			this.runElmTest_(folder)
+			// this.runElmTest_(folder)
 		}
 	}
 
