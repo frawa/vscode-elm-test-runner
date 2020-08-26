@@ -58,13 +58,16 @@ export class ExampleAdapter implements TestAdapter {
 
 		this.log.info(`Running example tests ${JSON.stringify(tests)}`);
 
-		this.testStatesEmitter.fire(<TestRunStartedEvent>{ type: 'started', tests });
+		const [files, testIds] = this.runner.getFilesAndTestIds(tests)
+		this.testStatesEmitter.fire(<TestRunStartedEvent>{ type: 'started', tests: testIds });
+
+		const loadedEvent = await this.runner.runSomeTests(files);
+		await this.runner.fireEvents(loadedEvent.suite!, this.testStatesEmitter)
 
 		// in a "real" TestAdapter this would start a test run in a child process
-		await runFakeTests(tests, this.testStatesEmitter);
+		// await runFakeTests(tests, this.testStatesEmitter);
 
 		this.testStatesEmitter.fire(<TestRunFinishedEvent>{ type: 'finished' });
-
 	}
 
 	/*	implement this method if your TestAdapter supports debugging tests
@@ -88,11 +91,13 @@ export class ExampleAdapter implements TestAdapter {
 }
 
 class ElmTestRunner {
-	private event: TestLoadFinishedEvent = { type: 'finished' }
+	private loadedSuite?: TestSuiteInfo = undefined
+
 	private resultById: Map<string, Result> = new Map<string, Result>();
 
-	private resolve: (value?: TestLoadFinishedEvent | PromiseLike<TestLoadFinishedEvent> | undefined) => void = () => { }
 	private reject: (reason?: any) => void = () => { }
+	private resolve: (value?: TestLoadFinishedEvent | PromiseLike<TestLoadFinishedEvent> | undefined) => void = () => { }
+	private loadingSuite?: TestSuiteInfo = undefined
 	private pendingMessages: string[] = [];
 
 	constructor(private folder: vscode.WorkspaceFolder) {
@@ -179,27 +184,59 @@ class ElmTestRunner {
 		return new Promise<TestLoadFinishedEvent>((resolve, reject) => {
 			this.resolve = resolve
 			this.reject = reject
-			this.event = {
-				type: 'finished',
-				suite: {
-					type: 'suite',
-					id: 'root',
-					label: 'root',
-					children: []
-				}
+			this.loadedSuite = undefined
+			this.loadingSuite = {
+				type: 'suite',
+				id: 'root',
+				label: 'root',
+				children: []
 			}
 			this.pendingMessages = []
 			this.makeAndRunElmTest()
 		})
 	}
 
-	private makeAndRunElmTest() {
+	getFilesAndTestIds(tests: string[]): [string[], string[]] {
+		const selectedIds = new Set(tests)
+		const files = Array.from(walk(this.loadedSuite!))
+			.filter(node => selectedIds.has(node.id))
+			.filter(node => node.file)
+			.map(node => node.file!)
+
+		const selectedFiles = new Set(files)
+		const testIds = Array.from(walk(this.loadedSuite!))
+			.filter(node => node.file)
+			.filter(node => selectedFiles.has(node.file!))
+			.map(node => node.id!)
+
+		return [files, testIds]
+	}
+
+	async runSomeTests(files: string[]): Promise<TestLoadFinishedEvent> {
+		return new Promise<TestLoadFinishedEvent>((resolve, reject) => {
+			this.resolve = resolve
+			this.reject = reject
+			this.loadingSuite = {
+				type: 'suite',
+				id: 'root',
+				label: 'root',
+				children: []
+			}
+			this.pendingMessages = []
+			this.makeAndRunElmTest(files)
+		})
+	}
+
+	private makeAndRunElmTest(files?: string[]) {
 		let kind: vscode.TaskDefinition = {
 			type: 'elm-test'
 		};
 
 		let cwdPath = this.folder.uri.fsPath
 		let args = this.elmTestArgs(cwdPath)
+		if (files) {
+			args = args.concat(files)
+		}
 
 		console.log("Running Elm Tests", args)
 
@@ -224,7 +261,7 @@ class ElmTestRunner {
 		vscode.tasks.onDidEndTaskProcess((event) => {
 			if (task === event.execution.task) {
 				if (event.exitCode !== 1) {
-					this.runElmTest()
+					this.runElmTest(files)
 				} else {
 					console.error("elm-test failed", event.exitCode)
 					this.reject(`elm-test failed with ${event.exitCode}`);
@@ -233,9 +270,12 @@ class ElmTestRunner {
 		})
 	}
 
-	private runElmTest() {
+	private runElmTest(files?: string[]) {
 		let cwdPath = this.folder.uri.fsPath
 		let args = this.elmTestArgs(cwdPath)
+		if (files) {
+			args = args.concat(files)
+		}
 
 		let elm = child_process.spawn(args[0], args.slice(1).concat(['--report', 'json']), {
 			cwd: cwdPath,
@@ -256,7 +296,13 @@ class ElmTestRunner {
 		})
 
 		elm.on('close', () => {
-			this.resolve(this.event);
+			if (!this.loadedSuite) {
+				this.loadedSuite = this.loadingSuite
+			}
+			this.resolve({
+				type: 'finished',
+				suite: this.loadedSuite
+			});
 		});
 	}
 
@@ -307,7 +353,7 @@ class ElmTestRunner {
 		}
 		if (result.event === 'testCompleted') {
 			result.messages = this.popMessages()
-			const id = this.addResult(this.event.suite!, result)
+			const id = this.addResult(this.loadingSuite!, result)
 			this.resultById.set(id, result)
 			// this._tests.push(result)
 		} else if (result.event === 'runStart') {
