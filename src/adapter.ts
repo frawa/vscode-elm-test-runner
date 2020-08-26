@@ -381,14 +381,20 @@ function buildMessage(result: Result): string {
 	let failureLines = (acc: string[], failure: Failure) => {
 		if (typeof failure === 'string') {
 			acc.push(failure)
-		}
-		if (failure.message) {
-			acc.push(failure.message)
-		}
-		if (failure.reason && failure.reason.data && (typeof failure.reason.data !== 'string')) {
-			let data = failure.reason.data
-			for (let key in data) {
-				acc.push(`${key}: ${data[key]}`)
+		} else {
+			if (failure.reason && failure.reason.data && (typeof failure.reason.data !== 'string')) {
+				let data = failure.reason.data
+				if (data.comparison) {
+					acc.push(evalStringLiteral(data.actual))
+					acc.push(`| ${data.comparison}`)
+					acc.push(evalStringLiteral(data.expected))
+				} else {
+					for (let key in data) {
+						acc.push(`${key}: ${data[key]}`)
+					}
+				}
+			} else if (failure.message) {
+				acc.push(failure.message)
 			}
 		}
 		return acc
@@ -396,4 +402,11 @@ function buildMessage(result: Result): string {
 
 	let lines = result.failures.reduce(failureLines, [])
 	return result.messages.concat(lines).join('\n')
+}
+
+function evalStringLiteral(value: string): string {
+	if (value && value.startsWith('"')) {
+		return eval(value).toString()
+	}
+	return value
 }
