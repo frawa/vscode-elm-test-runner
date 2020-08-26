@@ -98,33 +98,49 @@ class ElmTestRunner {
 	constructor(private folder: vscode.WorkspaceFolder) {
 	}
 
-	async fireLineEvents(node: TestSuiteInfo | TestInfo, testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>) {
-		if (node.type === 'suite') {
+	async fireLineEvents(node: TestSuiteInfo | TestInfo, testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>): Promise<number> {
+		const testInfosByFile = new Map<string, TestInfo[]>()
+		Array.from(walk(node))
+			.filter(node => node.file)
+			.filter(node => node.type === 'test')
+			.forEach(node => {
+				const file = node.file!
+				const testInfo = node as TestInfo
+				const infos = testInfosByFile.get(file)
+				if (!infos) {
+					testInfosByFile.set(file, [testInfo])
+				} else {
+					testInfosByFile.set(file, [...infos, testInfo])
+				}
+			})
 
-			for (const child of node.children) {
-				await this.fireLineEvents(child, testStatesEmitter);
-			}
-
-		} else { // node.type === 'test'
-
-			const result = this.resultById.get(node.id);
-			const testNames = result?.labels.slice(1)
-			vscode.workspace.openTextDocument(node.file!)
-				.then(doc => {
-					let offset: number | undefined = undefined
-					testNames?.forEach(testName => {
-						const description = '"' + testName + '"'
-						offset = doc.getText().indexOf(description, offset)
-					})
-					if (offset) {
-						const line = doc.positionAt(offset).line
-						testStatesEmitter.fire(<TestEvent>{ type: 'test', test: node.id, line });
-					}
-				})
-		}
+		return Promise.all(
+			Array.from(testInfosByFile.entries())
+				.map(([file, nodes]) =>
+					vscode.workspace.openTextDocument(file)
+						.then(doc => nodes.map(node => {
+							const result = this.resultById.get(node.id);
+							const testNames = result?.labels.slice(1)
+							let offset: number | undefined = undefined
+							testNames?.forEach(testName => {
+								const description = '"' + testName + '"'
+								offset = doc.getText().indexOf(description, offset)
+							})
+							if (offset) {
+								const line = doc.positionAt(offset).line
+								return { type: 'test', test: node.id, line } as TestEvent
+							}
+							return undefined
+						}))
+						.then(events => events.map(event => {
+							testStatesEmitter.fire(event)
+							return true
+						}).length)
+				)
+		).then(counts => counts.reduce((a, b) => a + b))
 	}
 
-	async fireEvents(node: TestSuiteInfo | TestInfo, testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>) {
+	async fireEvents(node: TestSuiteInfo | TestInfo, testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>): Promise<boolean> {
 		if (node.type === 'suite') {
 
 			testStatesEmitter.fire(<TestSuiteEvent>{ type: 'suite', suite: node.id, state: 'running' });
@@ -156,6 +172,7 @@ class ElmTestRunner {
 			}
 
 		}
+		return Promise.resolve(true);
 	}
 
 	async runAllTests(): Promise<TestLoadFinishedEvent> {
@@ -409,4 +426,13 @@ function evalStringLiteral(value: string): string {
 		return eval(value).toString()
 	}
 	return value
+}
+
+function* walk(node: TestSuiteInfo | TestInfo): Generator<TestSuiteInfo | TestInfo> {
+	yield node
+	if (node.type === 'suite') {
+		for (const child of node.children) {
+			for (const c of walk(child)) { yield c; }
+		}
+	}
 }
