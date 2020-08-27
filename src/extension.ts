@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 import { Log, TestAdapterRegistrar } from 'vscode-test-adapter-util';
 import { TestHub, testExplorerExtensionId } from 'vscode-test-adapter-api';
-import { ExampleAdapter } from './adapter';
+import { ElmTestAdapter } from './adapter';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
         const testHub = testExplorerExtension.exports;
         context.subscriptions.push(new TestAdapterRegistrar(
             testHub,
-            workspaceFolder => new ExampleAdapter(workspaceFolder, log),
+            workspaceFolder => new ElmTestAdapter(workspaceFolder, log),
             log
         ));
     }

@@ -7,11 +7,7 @@ import * as child_process from 'child_process'
 import * as fs from 'fs';
 import * as json from 'jsonc-parser'
 
-/**
- * This class is intended as a starting point for implementing a "real" TestAdapter.
- * The file `README.md` contains further instructions.
- */
-export class ExampleAdapter implements TestAdapter {
+export class ElmTestAdapter implements TestAdapter {
 
 	private disposables: { dispose(): void }[] = [];
 
@@ -30,7 +26,7 @@ export class ExampleAdapter implements TestAdapter {
 		private readonly log: Log
 	) {
 
-		this.log.info('Initializing example adapter');
+		this.log.info('Initializing Elm Test Runner adapter');
 
 		this.disposables.push(this.testsEmitter);
 		this.disposables.push(this.testStatesEmitter);
@@ -41,7 +37,7 @@ export class ExampleAdapter implements TestAdapter {
 
 	async load(): Promise<void> {
 
-		this.log.info('Loading example tests');
+		this.log.info('Loading tests');
 
 		this.testsEmitter.fire(<TestLoadStartedEvent>{ type: 'started' });
 
@@ -55,16 +51,13 @@ export class ExampleAdapter implements TestAdapter {
 
 	async run(tests: string[]): Promise<void> {
 
-		this.log.info(`Running example tests ${JSON.stringify(tests)}`);
+		this.log.info(`Running tests ${JSON.stringify(tests)}`);
 
 		const [files, testIds] = this.runner.getFilesAndTestIds(tests)
 		this.testStatesEmitter.fire(<TestRunStartedEvent>{ type: 'started', tests: testIds });
 
 		const loadedEvent = await this.runner.runSomeTests(files);
 		await this.runner.fireEvents(loadedEvent.suite!, this.testStatesEmitter)
-
-		// in a "real" TestAdapter this would start a test run in a child process
-		// await runFakeTests(tests, this.testStatesEmitter);
 
 		this.testStatesEmitter.fire(<TestRunFinishedEvent>{ type: 'finished' });
 	}
@@ -76,6 +69,8 @@ export class ExampleAdapter implements TestAdapter {
 	*/
 
 	cancel(): void {
+		// TODO
+		//this.runner.cancel();
 		// in a "real" TestAdapter this would kill the child process for the current test run (if there is any)
 		throw new Error("Method not implemented.");
 	}
