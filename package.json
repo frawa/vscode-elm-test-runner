@@ -115,14 +115,18 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
         "lint": "tslint -p .",
-        "lintfix": "tslint --fix -p .",
+        "lint-fix": "tslint --fix -p .",
         "watch": "tsc -watch -p ./",
         "postinstall": "node ./node_modules/vscode/bin/install",
-        "test": "npm run compile && node ./node_modules/vscode/bin/test",
-        "utest": "mocha -r ts-node/register ./ src/utest/**/*.test.ts",
-        "utest-watch": "mocha --watch -r ts-node/register ./ src/utest/**/*.test.ts",
+        "itest": "npm run compile && node ./node_modules/vscode/bin/test",
+        "test": "mocha",
+        "test-watch": "mocha --watch ",
         "vsce-package": "vsce package --yarn",
         "vsce-publish": "vsce publish --yarn"
+    },
+    "mocha": {
+        "require": "ts-node/register",
+        "spec": "src/utest/**/*.test.ts"
     },
     "devDependencies": {
         "@types/chai": "^4.2.12",
