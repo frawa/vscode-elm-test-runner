@@ -5,13 +5,18 @@
 
 https://code.visualstudio.com/api/working-with-extensions/publishing-extension
 
-Prepare
+## Prepare
 ```
-npm install -g vsce
-vsce login FraWa  
+yarn global add vsce
+yarn vsce login FraWa  
 ```
 
-Always
+## Always
 ```
-vsce package
+yarn package
+```
+
+## Publish
+```
+yarn publish
 ```

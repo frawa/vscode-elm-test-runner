@@ -58,7 +58,9 @@ export class ElmTestRunner {
                             return undefined
                         }))
                         .then(events => events.map(event => {
-                            testStatesEmitter.fire(event)
+                            if (event) {
+                                testStatesEmitter.fire(event)
+                            }
                             return true
                         }).length)
                 )
