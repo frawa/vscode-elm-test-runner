@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { TestAdapter, TestLoadStartedEvent, TestLoadFinishedEvent, TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent, TestSuiteInfo, TestInfo } from 'vscode-test-adapter-api';
 import { Log } from 'vscode-test-adapter-util';
-import { loadFakeTests, runFakeTests } from './fakeTests';
 
 import * as path from 'path';
 import * as child_process from 'child_process'
