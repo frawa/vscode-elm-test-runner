@@ -25,6 +25,17 @@
         "hbenl.vscode-test-explorer"
     ],
     "contributes": {
+        "configuration": {
+            "type": "object",
+            "title": "Elm Test Runner",
+            "properties": {
+                "elmTestRunner.logpanel": {
+                    "description": "write diagnotic logs to an output panel",
+                    "type": "boolean",
+                    "scope": "resource"
+                }
+            }
+        },
         "viewsContainers": {
             "activitybar": [
                 {

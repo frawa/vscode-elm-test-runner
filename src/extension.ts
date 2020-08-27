@@ -40,7 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const workspaceFolder = (vscode.workspace.workspaceFolders || [])[0];
 
-    const log = new Log('exampleExplorer', workspaceFolder, 'Example Explorer Log');
+    const log = new Log('elmTestRunner', workspaceFolder, 'Elm Test Runner Log');
     context.subscriptions.push(log);
 
     // get the Test Explorer extension
