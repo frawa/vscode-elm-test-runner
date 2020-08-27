@@ -6,6 +6,7 @@ import * as fs from 'fs';
 
 import { Result, buildMessage, parseTestResult } from "./result";
 import { walk } from './util';
+import { Log } from 'vscode-test-adapter-util';
 
 export class ElmTestRunner {
     private loadedSuite?: TestSuiteInfo = undefined
@@ -17,7 +18,9 @@ export class ElmTestRunner {
     private loadingSuite?: TestSuiteInfo = undefined
     private pendingMessages: string[] = [];
 
-    constructor(private folder: vscode.WorkspaceFolder) {
+    constructor(
+        private folder: vscode.WorkspaceFolder,
+        private readonly log: Log) {
     }
 
     async fireLineEvents(node: TestSuiteInfo | TestInfo, testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>): Promise<number> {
@@ -155,7 +158,7 @@ export class ElmTestRunner {
             args = args.concat(files)
         }
 
-        console.log("Running Elm Tests", args)
+        this.log.info("Running Elm Tests", args)
 
         let task = new vscode.Task(kind,
             this.folder,
@@ -172,7 +175,7 @@ export class ElmTestRunner {
             .executeTask(task)
             .then(
                 () => { },
-                (reason) => console.log("Run Elm Test Task failed", reason)
+                (reason) => this.log.error("Run Elm Test Task failed", reason)
             )
 
         vscode.tasks.onDidEndTaskProcess((event) => {
@@ -209,7 +212,7 @@ export class ElmTestRunner {
 
         elm.stderr.on('data', (data: string) => {
             let lines = data.toString().split('\n')
-            console.log("stderr", lines)
+            this.log.error("stderr", lines)
         })
 
         elm.on('close', () => {

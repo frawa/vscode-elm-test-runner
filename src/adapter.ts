@@ -28,7 +28,7 @@ export class ElmTestAdapter implements TestAdapter {
 		this.disposables.push(this.testStatesEmitter);
 		this.disposables.push(this.autorunEmitter);
 
-		this.runner = new ElmTestRunner(this.workspace)
+		this.runner = new ElmTestRunner(this.workspace, this.log)
 	}
 
 	async load(): Promise<void> {
@@ -47,7 +47,7 @@ export class ElmTestAdapter implements TestAdapter {
 
 	async run(tests: string[]): Promise<void> {
 
-		this.log.info(`Running tests ${JSON.stringify(tests)}`);
+		this.log.info('Running tests', tests);
 
 		const [files, testIds] = this.runner.getFilesAndTestIds(tests)
 		this.testStatesEmitter.fire(<TestRunStartedEvent>{ type: 'started', tests: testIds });
