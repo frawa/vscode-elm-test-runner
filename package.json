@@ -58,7 +58,7 @@
         "@types/chai": "^4.2.12",
         "@types/mocha": "^8.0.3",
         "@types/node": "^14.6.0",
-        "@types/vscode": "^1.23.0",
+        "@types/vscode": "^1.48.0",
         "chai": "^4.2.0",
         "mocha": "^8.1.2",
         "ts-mocha": "^7.0.0",
@@ -67,7 +67,7 @@
         "vsce": "^1.65.0"
     },
     "engines": {
-        "vscode": "^1.23.0"
+        "vscode": "^1.48.0"
     },
     "dependencies": {
         "jsonc-parser": "^2.3.0",
