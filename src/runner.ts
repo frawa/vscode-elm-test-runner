@@ -169,7 +169,12 @@ export class ElmTestRunner {
             }),
             "elm")
         task.group = vscode.TaskGroup.Test
-        task.presentationOptions = { echo: true, focus: true }
+        task.presentationOptions = {
+            echo: true,
+            focus: false,
+            reveal: vscode.TaskRevealKind.Never
+            //reveal: vscode.TaskRevealKind.Silent
+        }
 
         vscode.tasks
             .executeTask(task)
