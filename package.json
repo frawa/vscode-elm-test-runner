@@ -36,89 +36,10 @@
                 }
             }
         },
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "elm-test-runner",
-                    "title": "Elm Test Runner",
-                    "icon": "resources/Elm_logo.svg"
-                }
-            ]
-        },
-        "commands": [
-            {
-                "command": "elmTestRunner.toggle",
-                "title": "Enable/Disable Elm Tests",
-                "icon": {
-                    "light": "resources/light/outline-toggle_on-24px.svg",
-                    "dark": "resources/dark/outline-toggle_on-24px.svg"
-                }
-            },
-            {
-                "command": "elmTestRunner.diff",
-                "title": "Difference",
-                "icon": {
-                    "light": "resources/light/outline-compare_arrows-24px.svg",
-                    "dark": "resources/dark/outline-compare_arrows-24px.svg"
-                }
-            }
-        ],
-        "views": {
-            "elm-test-runner": [
-                {
-                    "id": "elmTestRunner",
-                    "name": "Tests"
-                }
-            ]
-        },
-        "menus": {
-            "view/title": [
-                {
-                    "command": "elmTestRunner.toggle",
-                    "when": "view == elmTestRunner",
-                    "group": "navigation"
-                }
-            ],
-            "view/item/context": [
-                {
-                    "command": "elmTestRunner.diff",
-                    "when": "view == elmTestRunner && viewItem == canDiff",
-                    "group": "inline"
-                }
-            ]
-        },
         "taskDefinitions": [
             {
                 "type": "elm-test",
                 "properties": {}
-            }
-        ],
-        "problemMatchers": [
-            {
-                "name": "elm",
-                "severity": "error",
-                "fileLocation": "absolute",
-                "pattern": [
-                    {
-                        "regexp": "^--\\s(.*)\\s-\\s(.*\\.elm)$",
-                        "code": 1,
-                        "file": 2
-                    },
-                    {
-                        "regexp": "^$"
-                    },
-                    {
-                        "regexp": "^(.+)\\.$",
-                        "message": 1
-                    },
-                    {
-                        "regexp": "^$"
-                    },
-                    {
-                        "regexp": "^(\\d+)|",
-                        "line": 1
-                    }
-                ]
             }
         ]
     },
