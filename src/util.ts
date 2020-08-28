@@ -34,3 +34,20 @@ export function findOffsetForTest(names: string[], text: string): number | undef
         0)
     return offset >= 0 ? offset : undefined
 }
+
+export function getFilesAndAllTestIds(ids: string[], suite: TestSuiteInfo): [string[], string[]] {
+    const selectedIds = new Set(ids)
+    const files = Array.from(walk(suite))
+        .filter(node => selectedIds.has(node.id))
+        .filter(node => node.file)
+        .map(node => node.file!)
+
+    const selectedFiles = new Set(files)
+    const allIds = Array.from(walk(suite))
+        .filter(node => node.file)
+        .filter(node => selectedFiles.has(node.file!))
+        .map(node => node.id!)
+
+    return [files, allIds]
+}
+

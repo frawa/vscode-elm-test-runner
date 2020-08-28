@@ -5,7 +5,7 @@ import * as child_process from 'child_process'
 import * as fs from 'fs';
 
 import { Result, buildMessage, parseTestResult } from "./result";
-import { walk, getTestInfosByFile, findOffsetForTest } from './util';
+import { getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds } from './util';
 import { Log } from 'vscode-test-adapter-util';
 
 export class ElmTestRunner {
@@ -104,20 +104,8 @@ export class ElmTestRunner {
         })
     }
 
-    getFilesAndTestIds(tests: string[]): [string[], string[]] {
-        const selectedIds = new Set(tests)
-        const files = Array.from(walk(this.loadedSuite!))
-            .filter(node => selectedIds.has(node.id))
-            .filter(node => node.file)
-            .map(node => node.file!)
-
-        const selectedFiles = new Set(files)
-        const testIds = Array.from(walk(this.loadedSuite!))
-            .filter(node => node.file)
-            .filter(node => selectedFiles.has(node.file!))
-            .map(node => node.id!)
-
-        return [files, testIds]
+    getFilesAndAllTestIds(tests: string[]): [string[], string[]] {
+        return getFilesAndAllTestIds(tests, this.loadedSuite!)
     }
 
     async runSomeTests(files: string[]): Promise<TestLoadFinishedEvent> {

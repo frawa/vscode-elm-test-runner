@@ -49,7 +49,7 @@ export class ElmTestAdapter implements TestAdapter {
 
 		this.log.info('Running tests', tests);
 
-		const [files, testIds] = this.runner.getFilesAndTestIds(tests)
+		const [files, testIds] = this.runner.getFilesAndAllTestIds(tests)
 		this.testStatesEmitter.fire(<TestRunStartedEvent>{ type: 'started', tests: testIds });
 
 		const loadedEvent = await this.runner.runSomeTests(files);

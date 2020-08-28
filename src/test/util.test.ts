@@ -1,7 +1,7 @@
 //import { expect } from 'chai';
 
 import { TestSuiteInfo } from "vscode-test-adapter-api"
-import { walk, getTestInfosByFile, findOffsetForTest } from "../util"
+import { walk, getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds } from "../util"
 import { expect } from "chai";
 
 describe('util', () => {
@@ -11,6 +11,30 @@ describe('util', () => {
         "label": 'a',
         children: []
     }
+
+    const suiteWithFiles: TestSuiteInfo = {
+        type: 'suite',
+        'id': 'a',
+        "label": 'a',
+        "file": "file0",
+        children: [{
+            type: 'test',
+            'id': 'a/b',
+            "label": 'b',
+            "file": "file2"
+        }, {
+            type: 'test',
+            'id': 'a/c',
+            "label": 'c',
+            "file": "file1"
+        }, {
+            type: 'test',
+            'id': 'a/d',
+            "label": 'd',
+            "file": "file2"
+        }]
+    }
+
     describe('walk suite', () => {
 
         it("no children", () => {
@@ -70,29 +94,7 @@ describe('util', () => {
         })
 
         it("two files", () => {
-            const suite: TestSuiteInfo = {
-                type: 'suite',
-                'id': 'a',
-                "label": 'a',
-                "file": "file0",
-                children: [{
-                    type: 'test',
-                    'id': 'a/b',
-                    "label": 'b',
-                    "file": "file2"
-                }, {
-                    type: 'test',
-                    'id': 'a/c',
-                    "label": 'c',
-                    "file": "file1"
-                }, {
-                    type: 'test',
-                    'id': 'a/d',
-                    "label": 'd',
-                    "file": "file2"
-                }]
-            }
-            const testInfosByFiles = getTestInfosByFile(suite)
+            const testInfosByFiles = getTestInfosByFile(suiteWithFiles)
             expect(Array.from(testInfosByFiles.keys())).to.eql(['file2', 'file1'])
             expect(testInfosByFiles.get('file1')?.map(n => n.label)).to.eql(['c'])
             expect(testInfosByFiles.get('file2')?.map(n => n.label)).to.eql(['b', 'd'])
@@ -145,6 +147,21 @@ describe('util', () => {
         })
     })
 
-    describe.skip('find files for tests', () => {
+    describe('find files for tests', () => {
+
+        it("empty", () => {
+            const ids = ['x']
+            const [files, allIds] = getFilesAndAllTestIds(ids, suiteWithoutChildren)
+            expect(files).to.be.empty
+            expect(allIds).to.be.empty
+        })
+
+        it("two tests", () => {
+            const ids = ['a/b']
+            const [files, allIds] = getFilesAndAllTestIds(ids, suiteWithFiles)
+            expect(files).to.eql(['file2'])
+            expect(allIds).to.eql(['a/b', 'a/d'])
+        })
+
     })
 })
