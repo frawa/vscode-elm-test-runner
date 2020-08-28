@@ -5,7 +5,7 @@ import * as child_process from 'child_process'
 import * as fs from 'fs';
 
 import { Result, buildMessage, parseTestResult } from "./result";
-import { walk } from './util';
+import { walk, getTestInfosByFile } from './util';
 import { Log } from 'vscode-test-adapter-util';
 
 export class ElmTestRunner {
@@ -23,22 +23,8 @@ export class ElmTestRunner {
         private readonly log: Log) {
     }
 
-    async fireLineEvents(node: TestSuiteInfo | TestInfo, testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>): Promise<number> {
-        const testInfosByFile = new Map<string, TestInfo[]>()
-        Array.from(walk(node))
-            .filter(node => node.file)
-            .filter(node => node.type === 'test')
-            .forEach(node => {
-                const file = node.file!
-                const testInfo = node as TestInfo
-                const infos = testInfosByFile.get(file)
-                if (!infos) {
-                    testInfosByFile.set(file, [testInfo])
-                } else {
-                    testInfosByFile.set(file, [...infos, testInfo])
-                }
-            })
-
+    async fireLineEvents(suite: TestSuiteInfo, testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>): Promise<number> {
+        const testInfosByFile = getTestInfosByFile(suite)
         return Promise.all(
             Array.from(testInfosByFile.entries())
                 .map(([file, nodes]) =>

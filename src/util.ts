@@ -8,3 +8,21 @@ export function* walk(node: TestSuiteInfo | TestInfo): Generator<TestSuiteInfo |
         }
     }
 }
+
+export function getTestInfosByFile(suite: TestSuiteInfo): Readonly<Map<string, TestInfo[]>> {
+    const testInfosByFile = new Map<string, TestInfo[]>()
+    Array.from(walk(suite))
+        .filter(node => node.file)
+        .filter(node => node.type === 'test')
+        .forEach(node => {
+            const file = node.file!
+            const testInfo = node as TestInfo
+            const infos = testInfosByFile.get(file)
+            if (!infos) {
+                testInfosByFile.set(file, [testInfo])
+            } else {
+                testInfosByFile.set(file, [...infos, testInfo])
+            }
+        })
+    return Object.freeze(testInfosByFile);
+}
