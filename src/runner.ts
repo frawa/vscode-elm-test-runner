@@ -5,7 +5,7 @@ import * as child_process from 'child_process'
 import * as fs from 'fs';
 
 import { Result, buildMessage, parseTestResult } from "./result";
-import { walk, getTestInfosByFile } from './util';
+import { walk, getTestInfosByFile, findOffsetForTest } from './util';
 import { Log } from 'vscode-test-adapter-util';
 
 export class ElmTestRunner {
@@ -29,26 +29,26 @@ export class ElmTestRunner {
             Array.from(testInfosByFile.entries())
                 .map(([file, nodes]) =>
                     vscode.workspace.openTextDocument(file)
-                        .then(doc => nodes.map(node => {
-                            const result = this.resultById.get(node.id);
-                            const testNames = result?.labels.slice(1)
-                            let offset: number | undefined = undefined
-                            testNames?.forEach(testName => {
-                                const description = '"' + testName + '"'
-                                offset = doc.getText().indexOf(description, offset)
+                        .then(doc => {
+                            const text = doc.getText()
+                            return nodes.map(node => {
+                                const id = node.id
+                                const result = this.resultById.get(id);
+                                const names = result?.labels.slice(1)
+                                return [findOffsetForTest(names!, text), id] as [number | undefined, string]
                             })
-                            if (offset) {
-                                const line = doc.positionAt(offset).line
-                                return { type: 'test', test: node.id, line } as TestEvent
-                            }
-                            return undefined
-                        }))
-                        .then(events => events.map(event => {
-                            if (event) {
+                                .filter(([offset, id]) => offset)
+                                .map(([offset, id]) => [doc.positionAt(offset!).line, id])
+                                .map(([line, id]) => ({ type: 'test', test: id, line } as TestEvent))
+                        })
+                        .then(events => events
+                            .filter(v => v)
+                            .map(event => {
                                 testStatesEmitter.fire(event)
-                            }
-                            return true
-                        }).length)
+                                return true
+                            })
+                            .length
+                        )
                 )
         ).then(counts => counts.reduce((a, b) => a + b))
     }

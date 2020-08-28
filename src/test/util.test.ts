@@ -1,7 +1,7 @@
 //import { expect } from 'chai';
 
 import { TestSuiteInfo } from "vscode-test-adapter-api"
-import { walk, getTestInfosByFile } from "../util"
+import { walk, getTestInfosByFile, findOffsetForTest } from "../util"
 import { expect } from "chai";
 
 describe('util', () => {
@@ -96,6 +96,52 @@ describe('util', () => {
             expect(Array.from(testInfosByFiles.keys())).to.eql(['file2', 'file1'])
             expect(testInfosByFiles.get('file1')?.map(n => n.label)).to.eql(['c'])
             expect(testInfosByFiles.get('file2')?.map(n => n.label)).to.eql(['b', 'd'])
+        })
+    })
+
+    describe('find lines for tests', () => {
+        it("no match", () => {
+            const text = `
+            some thing else
+            `;
+            const offset = findOffsetForTest(["first"], text)
+            expect(offset).to.be.undefined
+        })
+
+        it("match path", () => {
+            const text = `
+            "first"
+                "nested"
+            "second"
+            `;
+            const offset = findOffsetForTest(["first", "nested"], text)
+            expect(offset).to.be.eq(37)
+        })
+
+        it("match full path", () => {
+            const text = `
+            "first"
+                "nested"
+            "second"
+                "first"
+                    "nested"
+            `;
+            const offset = findOffsetForTest(["second", "first", "nested"], text)
+            expect(offset).to.be.eq(111)
+        })
+
+        it("match 'wrong' path", () => {
+            const text = `
+            "second"
+                "first"
+                    "nested"
+            "first"
+                "nested"
+           `;
+            const offset = findOffsetForTest(["first", "nested"], text)
+            expect(offset).to.be.eq(66)
+            // should have found the last line
+            //expect(offset).to.be.eq(111)
         })
     })
 

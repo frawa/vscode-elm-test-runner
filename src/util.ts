@@ -26,3 +26,11 @@ export function getTestInfosByFile(suite: TestSuiteInfo): Readonly<Map<string, T
         })
     return Object.freeze(testInfosByFile);
 }
+
+export function findOffsetForTest(names: string[], text: string): number | undefined {
+    const offset = names.reduce(
+        (acc: number, name: string) =>
+            text.indexOf(`"${name}"`, acc),
+        0)
+    return offset >= 0 ? offset : undefined
+}
