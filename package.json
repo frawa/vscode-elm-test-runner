@@ -48,8 +48,9 @@
         "test": "mocha",
         "test-watch": "mocha --watch",
         "test-mutate": "stryker run",
-        "package": "vsce package --yarn",
-        "publish": "vsce publish --yarn"
+        "vscode:prepublish": "yarn clean && yarn build && yarn test",
+        "vsce-package": "vsce package --yarn",
+        "vsce-publish": "vsce publish --yarn"
     },
     "mocha": {
         "require": "ts-node/register",
@@ -57,8 +58,8 @@
     },
     "devDependencies": {
         "@stryker-mutator/core": "^4.0.0-beta.3",
-        "@stryker-mutator/mocha-runner": "^4.0.0-beta.3",
         "@stryker-mutator/mocha-framework": "^4.0.0-beta.3",
+        "@stryker-mutator/mocha-runner": "^4.0.0-beta.3",
         "@stryker-mutator/typescript": "^4.0.0-beta.3",
         "@types/chai": "^4.2.12",
         "@types/mocha": "^8.0.3",
