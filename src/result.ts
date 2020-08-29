@@ -29,23 +29,21 @@ export interface Failure {
 
 export function buildMessage(result: Result): string {
     let failureLines = (acc: string[], failure: Failure) => {
-        if (typeof failure === 'string') {
-            acc.push(failure)
-        } else {
-            if (failure.reason && failure.reason.data && (typeof failure.reason.data !== 'string')) {
-                let data = failure.reason.data
-                if (data.comparison) {
-                    acc.push(evalStringLiteral(data.actual))
-                    acc.push(`| ${data.comparison}`)
-                    acc.push(evalStringLiteral(data.expected))
-                } else {
-                    for (let key in data) {
-                        acc.push(`${key}: ${data[key]}`)
-                    }
+        if (typeof failure.reason.data === 'object') {
+            let data = failure.reason.data
+            if (data.comparison) {
+                acc.push(evalStringLiteral(data.actual))
+                acc.push(`| ${data.comparison}`)
+                acc.push(evalStringLiteral(data.expected))
+            } else {
+                for (let key in data) {
+                    acc.push(`${key}: ${data[key]}`)
                 }
-            } else if (failure.message) {
-                acc.push(failure.message)
             }
+        } else if (failure.reason.data) {
+            acc.push(String(failure.reason.data))
+        } else if (failure.message) {
+            acc.push(failure.message)
         }
         return acc
     }
