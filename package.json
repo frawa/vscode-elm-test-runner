@@ -48,8 +48,8 @@
         "test": "mocha",
         "test-watch": "mocha --watch",
         "test-mutate": "stryker run",
-        "package": "vsce package --yarn",
-        "publish": "vsce publish --yarn"
+        "vsce-package": "vsce package --yarn",
+        "vsce-publish": "vsce publish --yarn"
     },
     "mocha": {
         "require": "ts-node/register",

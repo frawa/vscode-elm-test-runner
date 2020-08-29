@@ -43,4 +43,4 @@ jobs:
       - run:
           name: package
           command: |
-            yarn package
+            yarn vsce-package
