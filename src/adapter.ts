@@ -37,12 +37,14 @@ export class ElmTestAdapter implements TestAdapter {
 
 		this.testsEmitter.fire(<TestLoadStartedEvent>{ type: 'started' });
 
-		const loadedEvent = await this.runner.runAllTests();
-
-		this.testsEmitter.fire(loadedEvent);
-
-		await this.runner.fireLineEvents(loadedEvent.suite!, this.testStatesEmitter)
-		await this.runner.fireEvents(loadedEvent.suite!, this.testStatesEmitter)
+		try {
+			const loadedEvent = await this.runner.runAllTests();
+			this.testsEmitter.fire(loadedEvent);
+			await this.runner.fireLineEvents(loadedEvent.suite!, this.testStatesEmitter)
+			await this.runner.fireEvents(loadedEvent.suite!, this.testStatesEmitter)
+		} catch (error) {
+			this.testsEmitter.fire(<TestLoadFinishedEvent>{ type: 'finished', errorMessage: error });
+		}
 	}
 
 	async run(tests: string[]): Promise<void> {
