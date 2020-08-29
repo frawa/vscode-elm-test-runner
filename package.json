@@ -48,6 +48,7 @@
         "test": "mocha",
         "test-watch": "mocha --watch",
         "test-mutate": "stryker run",
+        "vscode:prepublish": "yarn clean && yarn build && yarn test",
         "vsce-package": "vsce package --yarn",
         "vsce-publish": "vsce publish --yarn"
     },
