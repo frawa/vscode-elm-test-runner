@@ -57,8 +57,8 @@
     },
     "devDependencies": {
         "@stryker-mutator/core": "^4.0.0-beta.3",
-        "@stryker-mutator/mocha-runner": "^4.0.0-beta.3",
         "@stryker-mutator/mocha-framework": "^4.0.0-beta.3",
+        "@stryker-mutator/mocha-runner": "^4.0.0-beta.3",
         "@stryker-mutator/typescript": "^4.0.0-beta.3",
         "@types/chai": "^4.2.12",
         "@types/mocha": "^8.0.3",
