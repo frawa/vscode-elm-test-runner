@@ -1,138 +1,84 @@
 {
     "name": "vscode-elm-test-runner",
-    "displayName": "Run elm tests",
-    "description": "Run elm tests in VS Code",
+    "displayName": "Run Elm tests",
+    "description": "Run Elm tests in VS Code",
     "icon": "resources/elmIcon.png",
     "repository": {
         "type": "git",
         "url": " https://github.com/frawa/vscode-elm-test-runner.git"
     },
-    "version": "0.7.3",
+    "version": "0.9.0",
     "publisher": "FraWa",
-    "engines": {
-        "vscode": "^1.28.1"
-    },
     "categories": [
         "Programming Languages"
     ],
     "license": "MIT",
     "activationEvents": [
-        "onView:elmTestRunner",
-        "onLanguage:elm"
+        "*"
     ],
     "main": "./out/extension",
+    "extensionDependencies": [
+        "hbenl.vscode-test-explorer"
+    ],
     "contributes": {
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "elm-test-runner",
-                    "title": "Elm Test Runner",
-                    "icon": "resources/Elm_logo.svg"
-                }
-            ]
-        },
-        "commands": [
-            {
-                "command": "elmTestRunner.toggle",
-                "title": "Enable/Disable Elm Tests",
-                "icon": {
-                    "light": "resources/light/outline-toggle_on-24px.svg",
-                    "dark": "resources/dark/outline-toggle_on-24px.svg"
-                }
-            },
-            {
-                "command": "elmTestRunner.diff",
-                "title": "Difference",
-                "icon": {
-                    "light": "resources/light/outline-compare_arrows-24px.svg",
-                    "dark": "resources/dark/outline-compare_arrows-24px.svg"
+        "configuration": {
+            "type": "object",
+            "title": "Elm Test Runner",
+            "properties": {
+                "elmTestRunner.logpanel": {
+                    "description": "write diagnotic logs to an output panel",
+                    "type": "boolean",
+                    "scope": "resource"
                 }
             }
-        ],
-        "views": {
-            "elm-test-runner": [
-                {
-                    "id": "elmTestRunner",
-                    "name": "Tests"
-                }
-            ]
-        },
-        "menus": {
-            "view/title": [
-                {
-                    "command": "elmTestRunner.toggle",
-                    "when": "view == elmTestRunner",
-                    "group": "navigation"
-                }
-            ],
-            "view/item/context": [
-                {
-                    "command": "elmTestRunner.diff",
-                    "when": "view == elmTestRunner && viewItem == canDiff",
-                    "group": "inline"
-                }
-            ]
         },
         "taskDefinitions": [
             {
                 "type": "elm-test",
                 "properties": {}
             }
-        ],
-        "problemMatchers": [
-            {
-                "name": "elm",
-                "severity": "error",
-                "fileLocation": "absolute",
-                "pattern": [
-                    {
-                        "regexp": "^--\\s(.*)\\s-\\s(.*\\.elm)$",
-                        "code": 1,
-                        "file": 2
-                    },
-                    {
-                        "regexp": "^$"
-                    },
-                    {
-                        "regexp": "^(.+)\\.$",
-                        "message": 1
-                    },
-                    {
-                        "regexp": "^$"
-                    },
-                    {
-                        "regexp": "^(\\d+)|",
-                        "line": 1
-                    }
-                ]
-            }
         ]
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
+        "clean": "rimraf out *.vsix",
+        "build": "tsc",
+        "watch": "tsc -watch",
         "lint": "tslint -p .",
-        "lintfix": "tslint --fix -p .",
-        "watch": "tsc -watch -p ./",
-        "postinstall": "node ./node_modules/vscode/bin/install",
-        "test": "npm run compile && node ./node_modules/vscode/bin/test",
-        "utest": "mocha -r ts-node/register ./ src/utest/**/*.test.ts",
-        "utest-watch": "mocha --watch -r ts-node/register ./ src/utest/**/*.test.ts",
-        "vsce-package": "vsce package --yarn",
-        "vsce-publish": "vsce publish --yarn"
+        "lint-fix": "tslint --fix -p .",
+        "test": "mocha",
+        "test-watch": "mocha --watch",
+        "test-mutate": "stryker run",
+        "package": "vsce package --yarn",
+        "publish": "vsce publish --yarn"
+    },
+    "mocha": {
+        "require": "ts-node/register",
+        "spec": "src/test/**/*.test.ts"
     },
     "devDependencies": {
+        "@stryker-mutator/core": "^4.0.0-beta.3",
+        "@stryker-mutator/mocha-runner": "^4.0.0-beta.3",
+        "@stryker-mutator/mocha-framework": "^4.0.0-beta.3",
+        "@stryker-mutator/typescript": "^4.0.0-beta.3",
         "@types/chai": "^4.2.12",
         "@types/mocha": "^8.0.3",
         "@types/node": "^14.6.0",
+        "@types/vscode": "^1.48.0",
         "chai": "^4.2.0",
-        "ts-node": "^9.0.0",
+        "mocha": "^8.1.2",
+        "stryker-cli": "^1.0.0",
+        "ts-mocha": "^7.0.0",
         "tslint": "^6.1.3",
-        "typescript": "^4.0.2",
-        "vsce": "^1.79.2",
-        "vscode": "^1.1.37"
+        "typescript": "^^3.5.3",
+        "vsce": "^1.65.0"
+    },
+    "engines": {
+        "vscode": "^1.48.0"
     },
     "dependencies": {
-        "jsonc-parser": "^2.3.0"
+        "jsonc-parser": "^2.3.0",
+        "rimraf": "^3.0.2",
+        "vscode-test-adapter-api": "^1.7.0",
+        "vscode-test-adapter-util": "^0.7.1"
     }
 }

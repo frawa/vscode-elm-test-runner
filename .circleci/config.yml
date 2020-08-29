@@ -32,10 +32,15 @@ jobs:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}-{{ checksum "package-lock.json" }}
 
-      # run tests!
       - run:
           name: test
           command: |
-            yarn utest
             yarn test
+            yarn test-mutate
+          # later?!
+          #yarn itest
 
+      - run:
+          name: package
+          command: |
+            yarn package

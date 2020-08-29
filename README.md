@@ -1,16 +1,17 @@
-# vscode-elm-test-runner README
+# Elm Test Runner 
 
-Early draft, please share your thoughts.
+Still draft, please share your thoughts.
 
 Running Elm tests in VS Code.
 
 ## Features
 
-- Run Elm tests when a file is saved.
-- Browse results and navigate to sources.
-- Show diffs between expected and actual results.
+- Integrated with [Test Explorer UI](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer)
+  - Browse results and navigate to sources.
+  - Show selected test result.
+  - Automatically run tests on changes.
+  - Run fewer tests (within the same file).
+
 - Show progress in terminal.
-- Support multiple workspace folders with Elm code.
-- Disable/enable running tests.
 - Support locally installed elm-test/elm binaries (for Elm 0.19).
-- Fix to support locally installed elm-make (for Elm 0.18).
+- Support locally installed elm-make (for Elm 0.18).
