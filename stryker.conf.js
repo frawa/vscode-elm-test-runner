@@ -12,6 +12,7 @@ module.exports = {
   tsconfigFile: "tsconfig.json",
   mutate: [
     "src/*.ts",
+    "!src/runner.ts",
     "!src/extension.ts",
     "!src/adapter.ts",
     "!src/test/*.ts"
