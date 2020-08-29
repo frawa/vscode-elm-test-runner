@@ -51,3 +51,27 @@ export function getFilesAndAllTestIds(ids: string[], suite: TestSuiteInfo): [str
     return [files, allIds]
 }
 
+export interface ElmBinaries {
+    elmTest?: string,
+    elmMake?: string,
+    elm?: string
+}
+
+export function buildElmTestArgs(binaries: ElmBinaries, files?: string[]): string[] {
+    const compiler = binaries.elmMake ?? binaries.elm
+    return [
+        binaries.elmTest ?? 'elm-test'
+    ]
+        .concat(
+            (compiler && ['--compiler', compiler]) ?? []
+        )
+        .concat(
+            files ?? []
+        )
+}
+
+export function buildElmTestArgsWithReport(args: string[]): string[] {
+    return args.concat([
+        '--report', 'json'
+    ])
+}

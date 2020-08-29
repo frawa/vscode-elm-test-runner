@@ -5,7 +5,7 @@ import * as child_process from 'child_process'
 import * as fs from 'fs';
 
 import { Result, buildMessage, parseTestResult } from "./result";
-import { getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds } from './util';
+import { getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds, ElmBinaries, buildElmTestArgs, buildElmTestArgsWithReport } from './util';
 import { Log } from 'vscode-test-adapter-util';
 
 export class ElmTestRunner {
@@ -100,7 +100,7 @@ export class ElmTestRunner {
                 children: []
             }
             this.pendingMessages = []
-            this.makeAndRunElmTest()
+            this.runElmTests()
         })
     }
 
@@ -119,66 +119,68 @@ export class ElmTestRunner {
                 children: []
             }
             this.pendingMessages = []
-            this.makeAndRunElmTest(files)
+            this.runElmTests(files)
         })
     }
 
-    private makeAndRunElmTest(files?: string[]) {
+    private runElmTests(files?: string[]) {
         let kind: vscode.TaskDefinition = {
             type: 'elm-test'
         };
 
         let cwdPath = this.folder.uri.fsPath
-        let args = this.elmTestArgs(cwdPath)
-        if (files) {
-            args = args.concat(files)
-        }
+        let args = this.elmTestArgs(cwdPath, files)
 
         this.log.info("Running Elm Tests", args)
 
-        let task = new vscode.Task(kind,
+        let task = new vscode.Task(
+            kind,
             this.folder,
-            'Run Elm Test', 'Elm Test Run',
-            // TODO make only
-            new vscode.ShellExecution(args[0], args.slice(1), {
+            'Run Elm Test',
+            'Elm Test Run',
+            new vscode.ShellExecution(
+                args[0],
+                args.slice(1), {
                 cwd: cwdPath
-            }),
-            "elm")
+            })
+        )
         task.group = vscode.TaskGroup.Test
         task.presentationOptions = {
+            clear: true,
             echo: true,
             focus: false,
-            reveal: vscode.TaskRevealKind.Never
-            //reveal: vscode.TaskRevealKind.Silent
+            reveal: vscode.TaskRevealKind.Never,
+            showReuseMessage: false
         }
 
         vscode.tasks
             .executeTask(task)
             .then(
                 () => { },
-                (reason) => this.log.error("Run Elm Test Task failed", reason)
+                (reason) => {
+                    this.log.error("Run Elm Test task failed", reason)
+                }
             )
 
         vscode.tasks.onDidEndTaskProcess((event) => {
             if (task === event.execution.task) {
                 if (event.exitCode !== 1) {
-                    this.runElmTest(files)
+                    this.runElmTestWithReport(cwdPath, args)
                 } else {
                     console.error("elm-test failed", event.exitCode)
-                    this.reject(`elm-test failed with ${event.exitCode}`);
+                    this.reject([
+                        'elm-test failed.',
+                        'Check for Elm errors,',
+                        `find details in the "Task - ${task.name}" terminal.`
+                    ].join('\n'));
                 }
             }
         })
     }
 
-    private runElmTest(files?: string[]) {
-        let cwdPath = this.folder.uri.fsPath
-        let args = this.elmTestArgs(cwdPath)
-        if (files) {
-            args = args.concat(files)
-        }
-
-        let elm = child_process.spawn(args[0], args.slice(1).concat(['--report', 'json']), {
+    private runElmTestWithReport(cwdPath: string, args: string[]) {
+        const argsWithReport = buildElmTestArgsWithReport(args)
+        let elm = child_process.spawn(argsWithReport[0], argsWithReport.slice(1), {
             cwd: cwdPath,
             env: process.env
         })
@@ -207,15 +209,16 @@ export class ElmTestRunner {
         });
     }
 
-    private elmTestArgs(projectFolder: string): string[] {
-        let elmTestBinary = this.findLocalNpmBinary('elm-test', projectFolder)
-        let elmMakeBinary = this.findLocalNpmBinary('elm-make', projectFolder)
-        let elmBinary = elmMakeBinary
-            ? elmMakeBinary
-            : this.findLocalNpmBinary('elm', projectFolder)
+    private elmTestArgs(projectFolder: string, files?: string[]): string[] {
+        return buildElmTestArgs(this.getElmBinaries(projectFolder), files);
+    }
 
-        return [elmTestBinary ? elmTestBinary : 'elm-test']
-            .concat(elmBinary ? ['--compiler', elmBinary] : [])
+    private getElmBinaries(projectFolder: string): ElmBinaries {
+        return {
+            elmTest: this.findLocalNpmBinary('elm-test', projectFolder),
+            elmMake: this.findLocalNpmBinary('elm-make', projectFolder),
+            elm: this.findLocalNpmBinary('elm', projectFolder)
+        }
     }
 
     private findLocalNpmBinary(binary: string, projectRoot: string): string | undefined {

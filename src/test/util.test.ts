@@ -1,7 +1,7 @@
 //import { expect } from 'chai';
 
 import { TestSuiteInfo } from "vscode-test-adapter-api"
-import { walk, getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds } from "../util"
+import { walk, getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds, ElmBinaries, buildElmTestArgs, buildElmTestArgsWithReport } from "../util"
 import { expect } from "chai";
 
 describe('util', () => {
@@ -162,6 +162,78 @@ describe('util', () => {
             expect(files).to.eql(['file2'])
             expect(allIds).to.eql(['a/b', 'a/d'])
         })
-
     })
+
+    describe('get elm-test args', () => {
+        it("without anything", () => {
+            const binaries: ElmBinaries = {
+            }
+            const args = buildElmTestArgs(binaries);
+            expect(args).to.eql(['elm-test'])
+        })
+
+        it("with local elm-test", () => {
+            const binaries: ElmBinaries = {
+                elmTest: "local/elm-test"
+            }
+            const args = buildElmTestArgs(binaries);
+            expect(args).to.eql(['local/elm-test'])
+        })
+
+        it("with local elm compiler (0.19)", () => {
+            const binaries: ElmBinaries = {
+                elmTest: "local/elm-test",
+                elm: "local/elm"
+            }
+            const args = buildElmTestArgs(binaries);
+            expect(args).to.eql([
+                'local/elm-test',
+                '--compiler',
+                'local/elm'
+            ])
+        })
+
+        it("with local elm-make compiler (0.18)", () => {
+            const binaries: ElmBinaries = {
+                elmTest: "local/elm-test",
+                elmMake: "local/elm-make"
+            }
+            const args = buildElmTestArgs(binaries);
+            expect(args).to.eql([
+                'local/elm-test',
+                '--compiler',
+                'local/elm-make'
+            ])
+        })
+
+        it("with files", () => {
+            const binaries: ElmBinaries = {
+                elmTest: "local/elm-test",
+                elm: "local/elm"
+            }
+            const files = ['file1', 'file2']
+            const args = buildElmTestArgs(binaries, files);
+            expect(args).to.eql([
+                'local/elm-test',
+                '--compiler',
+                'local/elm',
+                'file1',
+                'file2'
+            ])
+        })
+
+        it("with report", () => {
+            const args: string[] = [
+                'path/elm-test',
+                'file'
+            ]
+            const withReport = buildElmTestArgsWithReport(args);
+            expect(withReport).to.eql([
+                'path/elm-test',
+                'file',
+                '--report',
+                'json'
+            ])
+        })
+    });
 })
