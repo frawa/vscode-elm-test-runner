@@ -35,11 +35,13 @@ export class ElmTestRunner {
                                 const id = node.id
                                 const result = this.resultById.get(id);
                                 const names = result?.labels.slice(1)
-                                return [findOffsetForTest(names!, text), id] as [number | undefined, string]
+                                return [findOffsetForTest(names!, text, (offset) => doc.positionAt(offset).character), id] as [number | undefined, string]
                             })
                                 .filter(([offset, id]) => offset)
-                                .map(([offset, id]) => [doc.positionAt(offset!).line, id])
-                                .map(([line, id]) => ({ type: 'test', test: id, line } as TestEvent))
+                                .map(([offset, id]) => [doc.positionAt(offset!).line, id] as [number, string])
+                                .map(([line, id]) => ({
+                                    type: 'test', test: id, line
+                                } as TestEvent))
                         })
                         .then(events => events
                             .filter(v => v)

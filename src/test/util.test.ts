@@ -106,44 +106,72 @@ describe('util', () => {
             const text = `
             some thing else
             `;
-            const offset = findOffsetForTest(["first"], text)
+            const offset = findOffsetForTest(["first"], text, getIndent(text))
             expect(offset).to.be.undefined
         })
 
         it("match path", () => {
             const text = `
-            "first"
-                "nested"
-            "second"
+            suite1: Test
+            describe "first"
+                test "nested"
+            suite1: Test
+            describe "second"
             `;
-            const offset = findOffsetForTest(["first", "nested"], text)
-            expect(offset).to.be.eq(37)
+            const offset = findOffsetForTest(["first", "nested"], text, getIndent(text))
+            expect(text.substr(offset! - 5, 13)).to.be.eq('test "nested"')
         })
 
         it("match full path", () => {
             const text = `
-            "first"
-                "nested"
-            "second"
-                "first"
-                    "nested"
+            suite1: Test
+            describe "first"
+                test "nested"
+            suite1: Test
+            describe "second"
+                describe "first"
+                    fuzz "nested"
             `;
-            const offset = findOffsetForTest(["second", "first", "nested"], text)
-            expect(offset).to.be.eq(111)
+            const offset = findOffsetForTest(["second", "first", "nested"], text, getIndent(text))
+            expect(text.substr(offset! - 5, 13)).to.be.eq('fuzz "nested"')
         })
 
-        it("match 'wrong' path", () => {
+        it("do not match 'wrong' path", () => {
             const text = `
-            "second"
-                "first"
-                    "nested"
-            "first"
-                "nested"
+            suite1: Test
+            describe "second"
+                describe "first"
+                    test "nested"
+            suite2: Test
+            describe "first"
+                describe "nested"
            `;
-            const offset = findOffsetForTest(["first", "nested"], text)
-            expect(offset).to.be.eq(66)
-            // should have found the last line
-            //expect(offset).to.be.eq(111)
+            const offset = findOffsetForTest(["first", "nested"], text, getIndent(text))
+            expect(text.substr(offset! - 9, 17)).to.be.eq('describe "nested"')
+        })
+
+        function getIndent(text: string): ((offset: number) => number) {
+            return (offset: number) => {
+                const lastLineOffset = text.lastIndexOf('\n', offset)
+                return offset - lastLineOffset;
+            }
+        }
+
+        it("with stuff in between", () => {
+            const text = `
+            suite1: Test
+            describe "second"
+                describe "first"
+                    test "nested"
+
+            suite2: Test
+            suite2 =
+            describe "first"
+                [ fuzz (stuff) "nested"
+                ]
+           `;
+            const offset = findOffsetForTest(["first", "nested"], text, getIndent(text))
+            expect(text.substr(offset! - 13, 21)).to.be.eq('fuzz (stuff) "nested"')
         })
     })
 
