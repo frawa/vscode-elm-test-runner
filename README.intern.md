@@ -25,8 +25,8 @@ yarn vsce-package
 
 ## Publish
 ```
-VERSION=...
-yarn vsce-publish $VERSION
+VERSION=$(jq -r .version package.json)
+yarn vsce-publish 
 git tag $VERSION
 git push origin $VERSION
 ```
