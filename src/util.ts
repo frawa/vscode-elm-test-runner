@@ -41,7 +41,6 @@ export function findOffsetForTest(names: string[], text: string, getIndent: (ind
             const indent = next[1];
             return (indent! < accIndent!) ? next : acc
         })[0]
-    console.log('FW', leftMostTopLevelOffset)
 
     if (leftMostTopLevelOffset) {
         const offset = names.reduce(
