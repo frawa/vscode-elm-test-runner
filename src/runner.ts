@@ -82,7 +82,45 @@ export class ElmTestRunner {
                     break;
                 }
                 default:
-                    testStatesEmitter.fire(<TestEvent>{ type: 'test', test: node.id, state: 'failed', message });
+                    testStatesEmitter.fire(<TestEvent>{
+                        type: 'test', test: node.id, state: 'failed', message,
+                    });
+                    if (node.file) {
+                        vscode.workspace.openTextDocument(node.file)
+                            .then(doc => {
+                                const text = doc.getText()
+                                return result?.failures
+                                    .filter(failure => failure.reason && failure.reason.data && failure.reason.data.actual)
+                                    .map(failure => failure.reason.data)
+                                    .forEach(data => {
+                                        const result = this.resultById.get(node.id);
+                                        const names = result?.labels.slice(1)
+                                        const offset = findOffsetForTest(names!, text, (offset) => doc.positionAt(offset).character)
+                                        const expectedIndex = text.indexOf(data.expected, offset)
+                                        if (expectedIndex > -1) {
+                                            const actualLine = doc.positionAt(expectedIndex).line
+                                            testStatesEmitter.fire(<TestEvent>({
+                                                type: 'test',
+                                                test: node.id,
+                                                decorations: [{
+                                                    line: actualLine,
+                                                    message: `${data.comparison} ${data.expected} ${data.actual}`
+                                                }],
+                                            }))
+                                        } else if (offset) {
+                                            const line = doc.positionAt(offset).line
+                                            testStatesEmitter.fire(<TestEvent>({
+                                                type: 'test',
+                                                test: node.id,
+                                                decorations: [{
+                                                    line: line,
+                                                    message: `${data.comparison} ${data.expected} ${data.actual}`
+                                                }],
+                                            }))
+                                        }
+                                    })
+                            })
+                    }
                     break;
             }
 
