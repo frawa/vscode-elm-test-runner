@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
-import { TestSuiteInfo, TestLoadFinishedEvent, TestInfo, TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from "vscode-test-adapter-api";
+import { TestSuiteInfo, TestLoadFinishedEvent, TestInfo, TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent, TestDecoration } from "vscode-test-adapter-api";
 import path = require("path");
 import * as child_process from 'child_process'
 import * as fs from 'fs';
 
 import { Result, buildMessage, parseTestResult } from "./result";
-import { getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds, ElmBinaries, buildElmTestArgs, buildElmTestArgsWithReport } from './util';
+import { getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds, ElmBinaries, buildElmTestArgs, buildElmTestArgsWithReport, oneLine } from './util';
 import { Log } from 'vscode-test-adapter-util';
 
 export class ElmTestRunner {
@@ -74,7 +74,10 @@ export class ElmTestRunner {
             const message = buildMessage(result!)
             switch (result?.status) {
                 case 'pass': {
-                    testStatesEmitter.fire(<TestEvent>{ type: 'test', test: node.id, state: 'passed', message });
+                    testStatesEmitter.fire(<TestEvent>{
+                        type: 'test', test: node.id, state: 'passed', message,
+                        description: `${result.duration}s`,
+                    });
                     break;
                 }
                 case 'todo': {
@@ -82,50 +85,50 @@ export class ElmTestRunner {
                     break;
                 }
                 default:
-                    testStatesEmitter.fire(<TestEvent>{
-                        type: 'test', test: node.id, state: 'failed', message,
-                    });
                     if (node.file) {
-                        vscode.workspace.openTextDocument(node.file)
+                        await vscode.workspace.openTextDocument(node.file)
                             .then(doc => {
                                 const text = doc.getText()
                                 return result?.failures
                                     .filter(failure => failure.reason && failure.reason.data && failure.reason.data.actual)
                                     .map(failure => failure.reason.data)
-                                    .forEach(data => {
+                                    .map(data => {
                                         const result = this.resultById.get(node.id);
                                         const names = result?.labels.slice(1)
                                         const offset = findOffsetForTest(names!, text, (offset) => doc.positionAt(offset).character)
                                         const expectedIndex = text.indexOf(data.expected, offset)
+                                        const expected = oneLine(data.expected)
+                                        const actual = oneLine(data.actual)
                                         if (expectedIndex > -1) {
-                                            const actualLine = doc.positionAt(expectedIndex).line
-                                            testStatesEmitter.fire(<TestEvent>({
-                                                type: 'test',
-                                                test: node.id,
-                                                decorations: [{
-                                                    line: actualLine,
-                                                    message: `${data.comparison} ${data.expected} ${data.actual}`
-                                                }],
-                                            }))
+                                            const expectedLine = doc.positionAt(expectedIndex).line
+                                            return {
+                                                line: expectedLine,
+                                                message: `${data.comparison} ${expected} ${actual}`
+                                            } as TestDecoration
                                         } else if (offset) {
                                             const line = doc.positionAt(offset).line
-                                            testStatesEmitter.fire(<TestEvent>({
-                                                type: 'test',
-                                                test: node.id,
-                                                decorations: [{
-                                                    line: line,
-                                                    message: `${data.comparison} ${data.expected} ${data.actual}`
-                                                }],
-                                            }))
+                                            return {
+                                                line: line,
+                                                message: `${data.comparison} ${expected} ${actual}`
+                                            } as TestDecoration
                                         }
                                     })
+                            }).then(decorations => {
+                                testStatesEmitter.fire(<TestEvent>{
+                                    type: 'test',
+                                    test: node.id,
+                                    state: 'failed',
+                                    message,
+                                    decorations
+                                });
                             })
                     }
                     break;
             }
 
         }
-        return Promise.resolve(true);
+        // return Promise.resolve(true);
+        return true;
     }
 
     async runAllTests(): Promise<TestLoadFinishedEvent> {
@@ -319,7 +322,6 @@ export class ElmTestRunner {
                 type: 'test',
                 id: suite.id + '/' + labels[0],
                 label: labels[0],
-                description: labels[0],
                 file: this.getFilePath(result)
             }
             if (result.status === 'todo') {
@@ -342,7 +344,6 @@ export class ElmTestRunner {
             type: 'suite',
             id: suite.id + '/' + label!,
             label: label!,
-            description: label,
             children: [],
             file: this.getFilePath(result)
         }

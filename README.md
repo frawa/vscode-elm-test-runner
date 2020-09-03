@@ -21,6 +21,7 @@ Running Elm tests in VS Code.
 ### 0.9.5
 - more accurate line information for nested tests
 - decorate test failures
+- show test durations
 
 ### 0.9.1
 - only activate for projects with Elm files, fixes #29
