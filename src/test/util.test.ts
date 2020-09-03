@@ -1,7 +1,7 @@
 //import { expect } from 'chai';
 
 import { TestSuiteInfo } from "vscode-test-adapter-api"
-import { walk, getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds, ElmBinaries, buildElmTestArgs, buildElmTestArgsWithReport } from "../util"
+import { walk, getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds, ElmBinaries, buildElmTestArgs, buildElmTestArgsWithReport, oneLine } from "../util"
 import { expect } from "chai";
 
 describe('util', () => {
@@ -264,4 +264,26 @@ describe('util', () => {
             ])
         })
     });
+
+    describe("one line", () => {
+        it("single line", () => {
+            const text = 'short text'
+            expect(oneLine(text)).to.eq(text)
+        })
+
+        it("long line", () => {
+            const text = 'long text long long long long long long long long long long'
+            expect(oneLine(text)).to.eq('long text long long  ...')
+        })
+
+        it("short multi line", () => {
+            const text = 'short\nmulti\nline'
+            expect(oneLine(text)).to.eq('short multi line')
+        })
+
+        it("long multi line", () => {
+            const text = 'long\nmulti\nline\nlong\nlong\nlong\nlong\nlong'
+            expect(oneLine(text)).to.eq('long multi line long ...')
+        })
+    })
 })

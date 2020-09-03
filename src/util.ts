@@ -92,3 +92,11 @@ export function buildElmTestArgsWithReport(args: string[]): string[] {
         '--report', 'json'
     ])
 }
+
+export function oneLine(text: string): string {
+    const text1 = text.split('\n').join(' ')
+    if (text1.length > 20) {
+        return text1.substr(0, 20) + ' ...'
+    }
+    return text1;
+}
