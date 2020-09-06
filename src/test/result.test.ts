@@ -50,37 +50,6 @@ describe('Result', () => {
 
     })
 
-    /*
-        let result: Result = {
-                    event: ''
-                    , status: 'pass'
-                    , labels: ['test']
-                    , failures: [{
-                        message: 'diffable failure',
-                        reason: {
-                            data: {
-                                actual: 'actual',
-                                expected: 'expected'
-                            }
-                        }
-                    }]
-                    , duration: '0'
-                }
-                let result: Result = {
-                    event: ''
-                    , status: 'fail'
-                    , labels: ['suite', 'test']
-                    , failures: [{
-                        message: 'diffable failure',
-                        reason: {
-                            data: 'failure message'
-                        }
-                    }]
-                    , duration: '0'
-                }
-    
-    */
-
     describe('build message', () => {
         it('empty', () => {
             const result: Result = {
