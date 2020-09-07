@@ -12,11 +12,15 @@ Running Elm tests in VS Code.
   - Automatically run tests on changes.
   - Run fewer tests (within the same file).
 
-- Show progress in terminal.
+- Optional: show progress in terminal.
 - Support locally installed elm-test/elm binaries (for Elm 0.19).
 - Support locally installed elm-make (for Elm 0.18).
 
 ## CHANGES
+
+### 0.9.6
+- showing elm-test output in a terminal task is now optional
+- elm-test error details are shown as Test Explorer UI output
 
 ### 0.9.5
 - more accurate line information for nested tests
