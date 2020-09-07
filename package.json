@@ -7,7 +7,7 @@
         "type": "git",
         "url": " https://github.com/frawa/vscode-elm-test-runner.git"
     },
-    "version": "0.9.5",
+    "version": "0.9.6",
     "publisher": "FraWa",
     "categories": [
         "Programming Languages"
@@ -27,6 +27,11 @@
             "properties": {
                 "elmTestRunner.logpanel": {
                     "description": "write diagnotic logs to an output panel",
+                    "type": "boolean",
+                    "scope": "resource"
+                },
+                "elmTestRunner.showElmTestOutput": {
+                    "description": "show output of elm-test as Terminal Task",
                     "type": "boolean",
                     "scope": "resource"
                 }
