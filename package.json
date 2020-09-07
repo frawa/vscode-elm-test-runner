@@ -29,6 +29,11 @@
                     "description": "write diagnotic logs to an output panel",
                     "type": "boolean",
                     "scope": "resource"
+                },
+                "elmTestRunner.showElmTestOutput": {
+                    "description": "show output of elm-test as Terminal Task",
+                    "type": "boolean",
+                    "scope": "resource"
                 }
             }
         },

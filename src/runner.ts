@@ -4,7 +4,7 @@ import path = require("path");
 import * as child_process from 'child_process'
 import * as fs from 'fs';
 
-import { Result, buildMessage, parseTestResult } from "./result";
+import { Result, buildMessage, parseOutput, parseErrorOutput, buildErrorMessage } from "./result";
 import { getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds, ElmBinaries, buildElmTestArgs, buildElmTestArgsWithReport, oneLine } from './util';
 import { Log } from 'vscode-test-adapter-util';
 
@@ -16,6 +16,7 @@ export class ElmTestRunner {
     private reject: (reason?: any) => void = () => { }
     private resolve: (value?: TestLoadFinishedEvent | PromiseLike<TestLoadFinishedEvent> | undefined) => void = () => { }
     private loadingSuite?: TestSuiteInfo = undefined
+    private loadingErrorMessage?: string = undefined;
     private pendingMessages: string[] = [];
 
     constructor(
@@ -52,7 +53,7 @@ export class ElmTestRunner {
                             .length
                         )
                 )
-        ).then(counts => counts.reduce((a, b) => a + b))
+        ).then(counts => counts.length > 0 ? counts.reduce((a, b) => a + b) : 0)
     }
 
     async fireEvents(node: TestSuiteInfo | TestInfo, testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>): Promise<boolean> {
@@ -127,31 +128,19 @@ export class ElmTestRunner {
             }
 
         }
-        // return Promise.resolve(true);
         return true;
     }
 
     async runAllTests(): Promise<TestLoadFinishedEvent> {
-        return new Promise<TestLoadFinishedEvent>((resolve, reject) => {
-            this.resolve = resolve
-            this.reject = reject
-            this.loadedSuite = undefined
-            this.loadingSuite = {
-                type: 'suite',
-                id: 'root',
-                label: 'root',
-                children: []
-            }
-            this.pendingMessages = []
-            this.runElmTests()
-        })
+        this.loadedSuite = undefined
+        return this.runSomeTests()
     }
 
     getFilesAndAllTestIds(tests: string[]): [string[], string[]] {
         return getFilesAndAllTestIds(tests, this.loadedSuite!)
     }
 
-    async runSomeTests(files: string[]): Promise<TestLoadFinishedEvent> {
+    async runSomeTests(files?: string[]): Promise<TestLoadFinishedEvent> {
         return new Promise<TestLoadFinishedEvent>((resolve, reject) => {
             this.resolve = resolve
             this.reject = reject
@@ -161,20 +150,29 @@ export class ElmTestRunner {
                 label: 'root',
                 children: []
             }
+            this.loadingErrorMessage = undefined
             this.pendingMessages = []
             this.runElmTests(files)
         })
     }
 
     private runElmTests(files?: string[]) {
+        const withOutput = vscode.workspace.getConfiguration().get('elmTestRunner.showElmTestOutput')
+        let cwdPath = this.folder.uri.fsPath
+        let args = this.elmTestArgs(cwdPath, files)
+        if (withOutput) {
+            this.runElmTestsWithOutput(cwdPath, args)
+        } else {
+            this.runElmTestWithReport(cwdPath, args)
+        }
+    }
+
+    private runElmTestsWithOutput(cwdPath: string, args: string[]) {
         let kind: vscode.TaskDefinition = {
             type: 'elm-test'
         };
 
-        let cwdPath = this.folder.uri.fsPath
-        let args = this.elmTestArgs(cwdPath, files)
-
-        this.log.info("Running Elm Tests", args)
+        this.log.info("Running Elm Tests as task", args)
 
         let task = new vscode.Task(
             kind,
@@ -222,6 +220,8 @@ export class ElmTestRunner {
     }
 
     private runElmTestWithReport(cwdPath: string, args: string[]) {
+        this.log.info("Running Elm Tests", args)
+
         const argsWithReport = buildElmTestArgsWithReport(args)
         let elm = child_process.spawn(argsWithReport[0], argsWithReport.slice(1), {
             cwd: cwdPath,
@@ -229,7 +229,7 @@ export class ElmTestRunner {
         })
 
         elm.stdout.on('data', (data: string) => {
-            let lines = data.toString().split('\n')
+            const lines = data.toString().split('\n')
             lines
                 .forEach(line => {
                     this.parse([line])
@@ -237,19 +237,29 @@ export class ElmTestRunner {
         })
 
         elm.stderr.on('data', (data: string) => {
-            let lines = data.toString().split('\n')
-            this.log.error("stderr", lines)
+            const lines = data.toString().split('\n')
+            this.loadingErrorMessage = lines
+                .map(parseErrorOutput)
+                .map(buildErrorMessage)
+                .join('\n')
         })
 
         elm.on('close', () => {
-            if (!this.loadedSuite) {
-                this.loadedSuite = this.loadingSuite
+            if (this.loadingErrorMessage) {
+                this.resolve({
+                    type: 'finished',
+                    errorMessage: this.loadingErrorMessage
+                })
+            } else {
+                if (!this.loadedSuite) {
+                    this.loadedSuite = this.loadingSuite
+                }
+                this.resolve({
+                    type: 'finished',
+                    suite: this.loadedSuite,
+                })
             }
-            this.resolve({
-                type: 'finished',
-                suite: this.loadedSuite
-            });
-        });
+        })
     }
 
     private elmTestArgs(projectFolder: string, files?: string[]): string[] {
@@ -271,12 +281,14 @@ export class ElmTestRunner {
 
     private parse(lines: string[]): void {
         lines
-            .map(parseTestResult)
-            .forEach(result => {
-                if (typeof result === 'string') {
-                    this.pushMessage(result)
-                } else {
-                    this.accept(result)
+            .map(parseOutput)
+            .forEach(output => {
+                switch (output.type) {
+                    case 'message':
+                        this.pushMessage(output.line)
+                        break;
+                    case 'result':
+                        this.accept(output)
                 }
             })
     }
