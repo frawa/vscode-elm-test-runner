@@ -157,7 +157,7 @@ export class ElmTestRunner {
     }
 
     private runElmTests(files?: string[]) {
-        const withOutput = vscode.workspace.getConfiguration('elmTestRunner').get('elmTestRunner.showElmTestOutput')
+        const withOutput = vscode.workspace.getConfiguration('elmTestRunner').get('showElmTestOutput')
         let cwdPath = this.folder.uri.fsPath
         let args = this.elmTestArgs(cwdPath, files)
         if (withOutput) {
@@ -196,24 +196,23 @@ export class ElmTestRunner {
 
         vscode.tasks
             .executeTask(task)
-            .then(
-                () => { },
-                (reason) => {
-                    this.log.error("Run Elm Test task failed", reason)
-                }
-            )
+            .then(() => { })
 
         vscode.tasks.onDidEndTaskProcess((event) => {
             if (task === event.execution.task) {
-                if (event.exitCode !== 1) {
+                if (event.exitCode <= 2) {
                     this.runElmTestWithReport(cwdPath, args)
                 } else {
-                    console.error("elm-test failed", event.exitCode)
-                    this.reject([
-                        'elm-test failed.',
-                        'Check for Elm errors,',
-                        `find details in the "Task - ${task.name}" terminal.`
-                    ].join('\n'));
+                    console.error("elm-test failed", event.exitCode, args)
+                    this.log.info("Running Elm Test task failed", event.exitCode, args)
+                    this.resolve({
+                        type: 'finished',
+                        errorMessage: [
+                            'elm-test failed.',
+                            'Check for Elm errors,',
+                            `find details in the "Task - ${task.name}" terminal.`
+                        ].join('\n')
+                    })
                 }
             }
         })
@@ -251,7 +250,7 @@ export class ElmTestRunner {
                 type: 'finished',
                 errorMessage: message
             })
-            this.reject(message)
+            // this.reject(message)
         })
 
         elm.on('close', () => {
