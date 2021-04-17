@@ -1,7 +1,7 @@
 //import { expect } from 'chai';
 
 import { TestSuiteInfo } from "vscode-test-adapter-api"
-import { walk, getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds, ElmBinaries, buildElmTestArgs, buildElmTestArgsWithReport, oneLine } from "../util"
+import { walk, getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds, ElmBinaries, buildElmTestArgs, buildElmTestArgsWithReport, oneLine, getFilePathUnderTests } from "../util"
 import { expect } from "chai";
 
 describe('util', () => {
@@ -284,6 +284,45 @@ describe('util', () => {
         it("long multi line", () => {
             const text = 'long\nmulti\nline\nlong\nlong\nlong\nlong\nlong'
             expect(oneLine(text)).to.eq('long multi line long ...')
+        })
+    })
+
+    describe("getFilePathUnderTests", () => {
+        it("top level", () => {
+            const path = getFilePathUnderTests({
+                event: "anEvent",
+                status: "aStatus",
+                labels: ["Module"],
+                failures: [],
+                messages: [],
+                duration: '',
+            }
+            );
+            expect(path).to.eq("Module.elm")
+        })
+        it("first level", () => {
+            const path = getFilePathUnderTests({
+                event: "anEvent",
+                status: "aStatus",
+                labels: ["Module.Sub"],
+                failures: [],
+                messages: [],
+                duration: '',
+            }
+            );
+            expect(path).to.eq("Module/Sub.elm")
+        })
+        it("deeper level", () => {
+            const path = getFilePathUnderTests({
+                event: "anEvent",
+                status: "aStatus",
+                labels: ["Module.Sub.Deep"],
+                failures: [],
+                messages: [],
+                duration: '',
+            }
+            );
+            expect(path).to.eq("Module/Sub/Deep.elm")
         })
     })
 })

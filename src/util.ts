@@ -1,4 +1,5 @@
 import { TestSuiteInfo, TestInfo } from "vscode-test-adapter-api";
+import { Result } from "./result";
 
 export function* walk(node: TestSuiteInfo | TestInfo): Generator<TestSuiteInfo | TestInfo> {
     yield node
@@ -99,4 +100,10 @@ export function oneLine(text: string): string {
         return text1.substr(0, 20) + ' ...'
     }
     return text1;
+}
+
+export function getFilePathUnderTests(result: Result): string {
+    const module = result.labels[0];
+    const file = module.split('.').join('/')
+    return `${file}.elm`
 }

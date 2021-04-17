@@ -5,7 +5,7 @@ import * as child_process from 'child_process'
 import * as fs from 'fs';
 
 import { Result, buildMessage, parseOutput, parseErrorOutput, buildErrorMessage } from "./result";
-import { getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds, ElmBinaries, buildElmTestArgs, buildElmTestArgsWithReport, oneLine } from './util';
+import { getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds, ElmBinaries, buildElmTestArgs, buildElmTestArgsWithReport, oneLine, getFilePathUnderTests } from './util';
 import { Log } from 'vscode-test-adapter-util';
 
 export class ElmTestRunner {
@@ -198,7 +198,7 @@ export class ElmTestRunner {
 
         vscode.tasks.onDidEndTaskProcess((event) => {
             if (task === event.execution.task) {
-                if (event.exitCode <= 2) {
+                if (event.exitCode <= 3) {
                     this.runElmTestWithReport(cwdPath, args)
                 } else {
                     console.error("elm-test failed", event.exitCode, args)
@@ -370,8 +370,7 @@ export class ElmTestRunner {
     }
 
     private getFilePath(result: Result): string {
-        const module = result.labels[0];
-        const file = module.replace('.', '/')
-        return `${this.folder.uri.fsPath}/tests/${file}.elm`
+        const path = getFilePathUnderTests(result)
+        return `${this.folder.uri.fsPath}/tests/${path}`
     }
 }
