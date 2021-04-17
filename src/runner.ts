@@ -244,6 +244,16 @@ export class ElmTestRunner {
                 .join('\n')
         })
 
+        elm.on('error', (err) => {
+            const message = `Failed to run Elm Tests, is elm-test installed at ${args[0]}?`;
+            this.log.error(message, err);
+            this.resolve({
+                type: 'finished',
+                errorMessage: message
+            })
+            this.reject(message)
+        })
+
         elm.on('close', () => {
             if (this.loadingErrorMessage) {
                 this.resolve({
