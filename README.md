@@ -17,7 +17,8 @@ Running Elm tests in VS Code.
 ## CHANGES
 
 ### 0.9.7
-- improved error handling, like missing elm-test binary, see #33
+- improved error handling, like missing elm-test binary, resolves #33
+- fix finding modules in sub folders, fixes #34
 
 ### 0.9.6
 - showing elm-test output in a terminal task is now optional
