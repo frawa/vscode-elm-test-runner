@@ -108,7 +108,7 @@ export function buildMessage(result: Result): string {
         return acc
     }
 
-    let lines = result.failures.reduce(failureLines, [])
+    let lines = result.failures?.reduce(failureLines, []) ?? []
     return result.messages.concat(lines).join('\n')
 }
 
