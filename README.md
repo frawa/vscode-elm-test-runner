@@ -1,7 +1,5 @@
 # Elm Test Runner 
 
-Still draft, please share your thoughts.
-
 Running Elm tests in VS Code.
 
 ## Features
