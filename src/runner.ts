@@ -13,7 +13,6 @@ export class ElmTestRunner {
 
     private resultById: Map<string, Result> = new Map<string, Result>();
 
-    private reject: (reason?: any) => void = () => { }
     private resolve: (value: TestLoadFinishedEvent | PromiseLike<TestLoadFinishedEvent>) => void = () => { }
     private loadingSuite?: TestSuiteInfo = undefined
     private loadingErrorMessage?: string = undefined;
@@ -143,7 +142,6 @@ export class ElmTestRunner {
     async runSomeTests(files?: string[]): Promise<TestLoadFinishedEvent> {
         return new Promise<TestLoadFinishedEvent>((resolve, reject) => {
             this.resolve = resolve
-            this.reject = reject
             this.loadingSuite = {
                 type: 'suite',
                 id: 'root',
@@ -250,7 +248,6 @@ export class ElmTestRunner {
                 type: 'finished',
                 errorMessage: message
             })
-            // this.reject(message)
         })
 
         elm.on('close', () => {
