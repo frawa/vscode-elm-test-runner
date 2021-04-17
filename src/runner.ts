@@ -14,7 +14,7 @@ export class ElmTestRunner {
     private resultById: Map<string, Result> = new Map<string, Result>();
 
     private reject: (reason?: any) => void = () => { }
-    private resolve: (value?: TestLoadFinishedEvent | PromiseLike<TestLoadFinishedEvent> | undefined) => void = () => { }
+    private resolve: (value: TestLoadFinishedEvent | PromiseLike<TestLoadFinishedEvent>) => void = () => { }
     private loadingSuite?: TestSuiteInfo = undefined
     private loadingErrorMessage?: string = undefined;
     private pendingMessages: string[] = [];
@@ -157,7 +157,7 @@ export class ElmTestRunner {
     }
 
     private runElmTests(files?: string[]) {
-        const withOutput = vscode.workspace.getConfiguration().get('elmTestRunner.showElmTestOutput')
+        const withOutput = vscode.workspace.getConfiguration('elmTestRunner').get('elmTestRunner.showElmTestOutput')
         let cwdPath = this.folder.uri.fsPath
         let args = this.elmTestArgs(cwdPath, files)
         if (withOutput) {
