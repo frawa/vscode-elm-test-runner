@@ -23,38 +23,6 @@ export class ElmTestRunner {
         private readonly log: Log) {
     }
 
-    async fireLineEvents(suite: TestSuiteInfo, testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>): Promise<number> {
-        const testInfosByFile = getTestInfosByFile(suite)
-        return Promise.all(
-            Array.from(testInfosByFile.entries())
-                .map(([file, nodes]) =>
-                    vscode.workspace.openTextDocument(file)
-                        .then(doc => {
-                            const text = doc.getText()
-                            return nodes.map(node => {
-                                const id = node.id
-                                const result = this.resultById.get(id);
-                                const names = result?.labels.slice(1)
-                                return [findOffsetForTest(names!, text, (offset) => doc.positionAt(offset).character), id] as [number | undefined, string]
-                            })
-                                .filter(([offset, id]) => offset)
-                                .map(([offset, id]) => [doc.positionAt(offset!).line, id] as [number, string])
-                                .map(([line, id]) => ({
-                                    type: 'test', test: id, line
-                                } as TestEvent))
-                        })
-                        .then(events => events
-                            .filter(v => v)
-                            .map(event => {
-                                testStatesEmitter.fire(event)
-                                return true
-                            })
-                            .length
-                        )
-                )
-        ).then(counts => counts.length > 0 ? counts.reduce((a, b) => a + b) : 0)
-    }
-
     async fireEvents(node: TestSuiteInfo | TestInfo, testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>): Promise<boolean> {
         if (node.type === 'suite') {
 
@@ -75,59 +43,148 @@ export class ElmTestRunner {
             switch (result?.status) {
                 case 'pass': {
                     testStatesEmitter.fire(<TestEvent>{
-                        type: 'test', test: node.id, state: 'passed', message,
+                        type: 'test',
+                        test: node.id,
+                        state: 'passed',
+                        message,
                         description: `${result.duration}s`,
                     });
                     break;
                 }
                 case 'todo': {
-                    testStatesEmitter.fire(<TestEvent>{ type: 'test', test: node.id, state: 'skipped', message });
+                    testStatesEmitter.fire(<TestEvent>{
+                        type: 'test',
+                        test: node.id,
+                        state: 'skipped',
+                        message
+                    });
                     break;
                 }
                 default:
-                    if (node.file) {
-                        await vscode.workspace.openTextDocument(node.file)
-                            .then(doc => {
-                                const text = doc.getText()
-                                return result?.failures
-                                    .filter(failure => failure.reason && failure.reason.data && failure.reason.data.actual)
-                                    .map(failure => failure.reason.data)
-                                    .map(data => {
-                                        const result = this.resultById.get(node.id);
-                                        const names = result?.labels.slice(1)
-                                        const offset = findOffsetForTest(names!, text, (offset) => doc.positionAt(offset).character)
-                                        const expectedIndex = text.indexOf(data.expected, offset)
-                                        const expected = oneLine(data.expected)
-                                        const actual = oneLine(data.actual)
-                                        if (expectedIndex > -1) {
-                                            const expectedLine = doc.positionAt(expectedIndex).line
-                                            return {
-                                                line: expectedLine,
-                                                message: `${data.comparison} ${expected} ${actual}`
-                                            } as TestDecoration
-                                        } else if (offset) {
-                                            const line = doc.positionAt(offset).line
-                                            return {
-                                                line: line,
-                                                message: `${data.comparison} ${expected} ${actual}`
-                                            } as TestDecoration
-                                        }
-                                    })
-                            }).then(decorations => {
-                                testStatesEmitter.fire(<TestEvent>{
-                                    type: 'test',
-                                    test: node.id,
-                                    state: 'failed',
-                                    message,
-                                    decorations
-                                });
-                            })
-                    }
+                    testStatesEmitter.fire(<TestEvent>{
+                        type: 'test',
+                        test: node.id,
+                        state: 'failed',
+                        message,
+                    });
                     break;
             }
 
         }
         return true;
+    }
+
+    async fireLineEvents(suite: TestSuiteInfo, testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>): Promise<number> {
+        const testInfosByFile = getTestInfosByFile(suite)
+        return Promise.all(
+            Array.from(testInfosByFile.entries())
+                .map(([file, nodes]) => {
+                    return vscode.workspace.openTextDocument(file)
+                        .then(doc => {
+                            const text = doc.getText()
+                            return nodes.map(node => {
+                                const id = node.id
+                                const result = this.resultById.get(id);
+                                const names = result?.labels.slice(1)
+                                const status = result?.status
+                                return [findOffsetForTest(names!, text, (offset) => doc.positionAt(offset).character), id, status] as [number | undefined, string, string]
+                            })
+                                .filter(([offset]) => offset !== undefined)
+                                .map(([offset, id, status]) => [doc.positionAt(offset!).line ?? 0, id, status] as [number, string, string])
+                                .map(([line, id, status]) => (<TestEvent>{
+                                    type: 'test',
+                                    test: id,
+                                    state: status === 'pass' ? 'passed' : status === 'toto' ? 'skipped' : 'fail',
+                                    line
+                                }))
+                        })
+                        .then(events => events
+                            .map(event => {
+                                testStatesEmitter.fire(event)
+                                return true
+                            })
+                            .length
+                        )
+                })
+        )
+            .then(counts => counts.length > 0
+                ? counts.reduce((a, b) => a + b)
+                : 0
+            )
+    }
+
+    async fireDecorationEvents(suite: TestSuiteInfo, testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>): Promise<number> {
+        const testInfosByFile = getTestInfosByFile(suite, test => {
+            const result = this.resultById.get(test.id);
+            const status = result?.status
+            return status !== 'pass' && status !== 'todo'
+        });
+        return Promise.all(
+            Array.from(testInfosByFile.entries())
+                .map(([file, nodes]) => {
+                    return vscode.workspace.openTextDocument(file)
+                        .then(doc => {
+                            const text = doc.getText()
+                            return nodes.map(node => {
+                                const id = node.id
+                                const result = this.resultById.get(id);
+                                const decorations: TestDecoration[] | undefined = result?.failures
+                                    .filter(failure => failure?.reason?.data !== undefined)
+                                    .map(failure => {
+                                        const data = failure.reason.data
+                                        const names = result?.labels.slice(1)
+                                        const offset = findOffsetForTest(names!, text, (offset) => doc.positionAt(offset).character)
+                                        if (data.expected && data.actual) {
+                                            const expectedIndex = text.indexOf(data.expected, offset)
+                                            const expected = oneLine(data.expected)
+                                            const actual = oneLine(data.actual)
+                                            if (expectedIndex > -1) {
+                                                const expectedLine = doc.positionAt(expectedIndex).line
+                                                return <TestDecoration>{
+                                                    line: expectedLine,
+                                                    message: `${data.comparison} ${expected} ${actual}`
+                                                }
+                                            } else if (offset) {
+                                                const line = doc.positionAt(offset).line
+                                                return <TestDecoration>{
+                                                    line: line,
+                                                    message: `${data.comparison} ${expected} ${actual}`
+                                                }
+                                            }
+                                        } else if (offset) {
+                                            const line = doc.positionAt(offset).line
+                                            return <TestDecoration>{
+                                                line: line,
+                                                message: `${data.toString()}`
+                                            }
+                                        }
+                                    })
+                                    .filter(v => v !== undefined)
+                                    .map(v => v!)
+                                if (decorations && decorations.length > 0) {
+                                    return <TestEvent>{
+                                        type: 'test',
+                                        test: node.id,
+                                        state: 'failed',
+                                        decorations
+                                    }
+                                }
+                            })
+                        })
+                        .then(events => events
+                            .filter(v => v !== undefined)
+                            .map(v => v!)
+                            .map(event => {
+                                testStatesEmitter.fire(event)
+                                return true
+                            })
+                            .length
+                        )
+                })
+        ).then(counts => counts.length > 0
+            ? counts.reduce((a, b) => a + b)
+            : 0
+        )
     }
 
     async runAllTests(): Promise<TestLoadFinishedEvent> {
