@@ -140,7 +140,7 @@ export class ElmTestRunner {
     }
 
     async runSomeTests(files?: string[]): Promise<TestLoadFinishedEvent> {
-        return new Promise<TestLoadFinishedEvent>((resolve, reject) => {
+        return new Promise<TestLoadFinishedEvent>((resolve) => {
             this.resolve = resolve
             this.loadingSuite = {
                 type: 'suite',
@@ -155,7 +155,7 @@ export class ElmTestRunner {
     }
 
     private runElmTests(files?: string[]) {
-        const withOutput = vscode.workspace.getConfiguration('elmTestRunner').get('showElmTestOutput')
+        const withOutput = vscode.workspace.getConfiguration('elmTestRunner', null).get('showElmTestOutput')
         let cwdPath = this.folder.uri.fsPath
         let args = this.elmTestArgs(cwdPath, files)
         if (withOutput) {
@@ -198,7 +198,7 @@ export class ElmTestRunner {
 
         vscode.tasks.onDidEndTaskProcess((event) => {
             if (task === event.execution.task) {
-                if (event.exitCode <= 3) {
+                if ((event.exitCode ?? 0) <= 3) {
                     this.runElmTestWithReport(cwdPath, args)
                 } else {
                     console.error("elm-test failed", event.exitCode, args)
@@ -225,21 +225,11 @@ export class ElmTestRunner {
             env: process.env
         })
 
-        elm.stdout.on('data', (data: string) => {
-            const lines = data.toString().split('\n')
-            lines
-                .forEach(line => {
-                    this.parse([line])
-                })
-        })
+        const outChunks: Buffer[] = []
+        elm.stdout.on('data', (chunk) => outChunks.push(Buffer.from(chunk)));
 
-        elm.stderr.on('data', (data: string) => {
-            const lines = data.toString().split('\n')
-            this.loadingErrorMessage = lines
-                .map(parseErrorOutput)
-                .map(buildErrorMessage)
-                .join('\n')
-        })
+        const errChunks: Buffer[] = []
+        elm.stderr.on('data', (chunk) => errChunks.push(Buffer.from(chunk)));
 
         elm.on('error', (err) => {
             const message = `Failed to run Elm Tests, is elm-test installed at ${args[0]}?`;
@@ -251,6 +241,19 @@ export class ElmTestRunner {
         })
 
         elm.on('close', () => {
+            const data = Buffer.concat(outChunks).toString('utf8')
+            const lines = data.split('\n')
+            this.parse(lines)
+
+            if (errChunks.length > 0) {
+                const data = Buffer.concat(errChunks).toString('utf8')
+                const lines = data.split('\n')
+                this.loadingErrorMessage = lines
+                    .map(parseErrorOutput)
+                    .map(buildErrorMessage)
+                    .join('\n')
+            }
+
             if (this.loadingErrorMessage) {
                 this.resolve({
                     type: 'finished',
@@ -287,6 +290,7 @@ export class ElmTestRunner {
 
     private parse(lines: string[]): void {
         lines
+            .filter(line => line.length > 0)
             .map(parseOutput)
             .forEach(output => {
                 switch (output.type) {
@@ -320,11 +324,10 @@ export class ElmTestRunner {
             result.messages = this.popMessages()
             const id = this.addResult(this.loadingSuite!, result)
             this.resultById.set(id, result)
-            // this._tests.push(result)
         } else if (result.event === 'runStart') {
-            // this.start();
+            // nothing to do
         } else if (result.event === 'runComplete') {
-            // this.complete()
+            // nothing to do
         }
     }
 
