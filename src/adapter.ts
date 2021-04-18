@@ -39,8 +39,9 @@ export class ElmTestAdapter implements TestAdapter {
 			const loadedEvent = await this.runner.runAllTests();
 			this.testsEmitter.fire(loadedEvent);
 			if (!loadedEvent.errorMessage) {
-				await this.runner.fireLineEvents(loadedEvent.suite!, this.testStatesEmitter)
 				await this.runner.fireEvents(loadedEvent.suite!, this.testStatesEmitter)
+				await this.runner.fireLineEvents(loadedEvent.suite!, this.testStatesEmitter)
+				await this.runner.fireDecorationEvents(loadedEvent.suite!, this.testStatesEmitter)
 			}
 		} catch (error) {
 			this.log.info('Failed to load tests', error);
@@ -49,7 +50,6 @@ export class ElmTestAdapter implements TestAdapter {
 	}
 
 	async run(tests: string[]): Promise<void> {
-
 		this.log.info('Running tests', tests);
 
 		const [files, testIds] = this.runner.getFilesAndAllTestIds(tests)
