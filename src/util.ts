@@ -10,11 +10,12 @@ export function* walk(node: TestSuiteInfo | TestInfo): Generator<TestSuiteInfo |
     }
 }
 
-export function getTestInfosByFile(suite: TestSuiteInfo): Readonly<Map<string, TestInfo[]>> {
+export function getTestInfosByFile(suite: TestSuiteInfo, pred?: (test: TestInfo) => boolean): Readonly<Map<string, TestInfo[]>> {
+    const pred1 = pred ?? (() => true)
     const testInfosByFile = new Map<string, TestInfo[]>()
     Array.from(walk(suite))
         .filter(node => node.file)
-        .filter(node => node.type === 'test')
+        .filter(node => node.type === 'test' && pred1(node))
         .forEach(node => {
             const file = node.file!
             const testInfo = node as TestInfo
