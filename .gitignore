@@ -1,9 +1,5 @@
-out
-node_modules
+out/
+node_modules/
 .vscode-test/
 *.vsix
 example/
-
-# stryker temp files
-.stryker-tmp
-/reports/
