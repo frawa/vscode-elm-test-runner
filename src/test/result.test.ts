@@ -1,13 +1,18 @@
-import { expect } from 'chai';
+import { expect } from 'chai'
 
-import { parseOutput, Result, buildMessage, Message, parseErrorOutput } from '../result'
+import {
+    parseOutput,
+    Result,
+    buildMessage,
+    Message,
+    parseErrorOutput,
+} from '../result'
 
 describe('Result', () => {
-
     describe('parse results', () => {
-
         it('one line pass', () => {
-            let line = '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
+            let line =
+                '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
             const output = parseOutput(line)
             expect(output.type).to.eq('result')
             const result = output as Result
@@ -19,7 +24,8 @@ describe('Result', () => {
         })
 
         it('one line todo', () => {
-            const line = '{"event":"testCompleted","status":"todo","labels":["suite"],"failures":["todo comment"],"duration":"1"}'
+            const line =
+                '{"event":"testCompleted","status":"todo","labels":["suite"],"failures":["todo comment"],"duration":"1"}'
             const output = parseOutput(line)
             expect(output.type).to.eq('result')
             const result = output as Result
@@ -74,25 +80,25 @@ describe('Result', () => {
             const output = parseErrorOutput(line)
             const expected = {
                 type: 'compile-errors',
-                errors: [{
-                    path: 'path/to/file.elm',
-                    name: 'a name',
-                    problems: [{
-                        title: 'THE ERROR',
-                        region: {
-                            start: { line: 17, column: 5 },
-                            end: { line: 17, column: 10 }
-                        },
-                        message: [
-                            'some text',
-                            { "string": 'more text' }
-                        ]
-                    }]
-                }]
+                errors: [
+                    {
+                        path: 'path/to/file.elm',
+                        name: 'a name',
+                        problems: [
+                            {
+                                title: 'THE ERROR',
+                                region: {
+                                    start: { line: 17, column: 5 },
+                                    end: { line: 17, column: 10 },
+                                },
+                                message: ['some text', { string: 'more text' }],
+                            },
+                        ],
+                    },
+                ],
             }
             expect(output).to.eql(expected)
         })
-
     })
 
     describe('build message', () => {
@@ -106,7 +112,7 @@ describe('Result', () => {
                 messages: [],
                 duration: '0',
             }
-            const message = buildMessage(result);
+            const message = buildMessage(result)
             expect(message).to.eq('')
         })
 
@@ -120,7 +126,7 @@ describe('Result', () => {
                 messages: ['hello', 'world'],
                 duration: '0',
             }
-            const message = buildMessage(result);
+            const message = buildMessage(result)
             expect(message).to.eq('hello\nworld')
         })
 
@@ -130,16 +136,18 @@ describe('Result', () => {
                 event: '',
                 status: 'pass',
                 labels: ['suite', 'test'],
-                failures: [{
-                    message: 'boom',
-                    reason: {
-                        data: 'broken'
-                    }
-                }],
+                failures: [
+                    {
+                        message: 'boom',
+                        reason: {
+                            data: 'broken',
+                        },
+                    },
+                ],
                 messages: [],
                 duration: '0',
             }
-            const message = buildMessage(result);
+            const message = buildMessage(result)
             expect(message).to.eq('broken')
         })
 
@@ -149,16 +157,18 @@ describe('Result', () => {
                 event: '',
                 status: 'pass',
                 labels: ['suite', 'test'],
-                failures: [{
-                    message: 'boom',
-                    reason: {
-                        data: undefined
-                    }
-                }],
+                failures: [
+                    {
+                        message: 'boom',
+                        reason: {
+                            data: undefined,
+                        },
+                    },
+                ],
                 messages: [],
                 duration: '0',
             }
-            const message = buildMessage(result);
+            const message = buildMessage(result)
             expect(message).to.eq('boom')
         })
 
@@ -168,25 +178,25 @@ describe('Result', () => {
                 event: '',
                 status: 'pass',
                 labels: ['suite', 'test'],
-                failures: [{
-                    message: 'boom',
-                    reason: {
-                        data: {
-                            comparison: 'compare',
-                            actual: 'actual',
-                            expected: 'expected',
-                        }
-                    }
-                }],
+                failures: [
+                    {
+                        message: 'boom',
+                        reason: {
+                            data: {
+                                comparison: 'compare',
+                                actual: 'actual',
+                                expected: 'expected',
+                            },
+                        },
+                    },
+                ],
                 messages: [],
                 duration: '0',
             }
-            const message = buildMessage(result);
-            expect(message).to.eq([
-                'actual',
-                '| compare',
-                'expected'
-            ].join('\n'))
+            const message = buildMessage(result)
+            expect(message).to.eq(
+                ['actual', '| compare', 'expected'].join('\n')
+            )
         })
 
         it('with failure with string literal in comparison data', () => {
@@ -195,27 +205,31 @@ describe('Result', () => {
                 event: '',
                 status: 'pass',
                 labels: ['suite', 'test'],
-                failures: [{
-                    message: 'boom',
-                    reason: {
-                        data: {
-                            comparison: 'compare',
-                            actual: '"multi\\nline\\nactual"',
-                            expected: '"quoted \\"expected\\""',
-                        }
-                    }
-                }],
+                failures: [
+                    {
+                        message: 'boom',
+                        reason: {
+                            data: {
+                                comparison: 'compare',
+                                actual: '"multi\\nline\\nactual"',
+                                expected: '"quoted \\"expected\\""',
+                            },
+                        },
+                    },
+                ],
                 messages: [],
                 duration: '0',
             }
-            const message = buildMessage(result);
-            expect(message).to.eq([
-                'multi',
-                'line',
-                'actual',
-                '| compare',
-                'quoted "expected"'
-            ].join('\n'))
+            const message = buildMessage(result)
+            expect(message).to.eq(
+                [
+                    'multi',
+                    'line',
+                    'actual',
+                    '| compare',
+                    'quoted "expected"',
+                ].join('\n')
+            )
         })
 
         it('with failure with other data', () => {
@@ -224,25 +238,24 @@ describe('Result', () => {
                 event: '',
                 status: 'pass',
                 labels: ['suite', 'test'],
-                failures: [{
-                    message: 'boom',
-                    reason: {
-                        data: {
-                            key1: 'value1',
-                            key2: 'value2',
-                        }
-                    }
-                }],
+                failures: [
+                    {
+                        message: 'boom',
+                        reason: {
+                            data: {
+                                key1: 'value1',
+                                key2: 'value2',
+                            },
+                        },
+                    },
+                ],
                 messages: [],
                 duration: '0',
             }
-            const message = buildMessage(result);
-            expect(message).to.eq([
-                'key1: value1',
-                'key2: value2',
-            ].join('\n'))
+            const message = buildMessage(result)
+            expect(message).to.eq(['key1: value1', 'key2: value2'].join('\n'))
         })
-    });
+    })
 
     it('with message and failure with comparison data', () => {
         const result: Result = {
@@ -250,26 +263,24 @@ describe('Result', () => {
             event: '',
             status: 'pass',
             labels: ['suite', 'test'],
-            failures: [{
-                message: 'boom',
-                reason: {
-                    data: {
-                        comparison: 'compare',
-                        actual: 'actual',
-                        expected: 'expected',
-                    }
-                }
-            }],
+            failures: [
+                {
+                    message: 'boom',
+                    reason: {
+                        data: {
+                            comparison: 'compare',
+                            actual: 'actual',
+                            expected: 'expected',
+                        },
+                    },
+                },
+            ],
             messages: ['broken'],
             duration: '0',
         }
-        const message = buildMessage(result);
-        expect(message).to.eq([
-            'broken',
-            'actual',
-            '| compare',
-            'expected'
-        ].join('\n'))
+        const message = buildMessage(result)
+        expect(message).to.eq(
+            ['broken', 'actual', '| compare', 'expected'].join('\n')
+        )
     })
-
 })

@@ -3,44 +3,48 @@ import * as json from 'jsonc-parser'
 export function parseOutput(line: string): Output {
     var errors: json.ParseError[] = []
     var output: Output = json.parse(line, errors)
-    var nojson = errors.find(e => e.error === json.ParseErrorCode.InvalidSymbol)
+    var nojson = errors.find(
+        (e) => e.error === json.ParseErrorCode.InvalidSymbol
+    )
     if (errors.length > 0 && nojson) {
         return { type: 'message', line }
     }
     if (!output.type) {
         output.type = 'result'
     }
-    return output;
+    return output
 }
 
 export function parseErrorOutput(line: string): ErrorOutput {
     var errors: json.ParseError[] = []
     var output: CompileErrors = json.parse(line, errors)
-    var nojson = errors.find(e => e.error === json.ParseErrorCode.InvalidSymbol)
+    var nojson = errors.find(
+        (e) => e.error === json.ParseErrorCode.InvalidSymbol
+    )
     if (errors.length > 0 && nojson) {
         return { type: 'message', line }
     }
-    return output;
+    return output
 }
-
 
 export type Output = Message | Result
 
 export type ErrorOutput = Message | CompileErrors
 
 export type Message = {
-    type: "message",
+    type: 'message'
     line: string
 }
 
+// TODO typed events
 export type Result = {
-    type?: "result",
+    type?: 'result'
     event: string
     status: string
     labels: string[]
     failures: Failure[]
     messages: string[]
-    duration: string,
+    duration: string
     testCount?: number
 }
 
@@ -52,39 +56,39 @@ export type Failure = {
 }
 
 export type CompileErrors = {
-    type: 'compile-errors',
+    type: 'compile-errors'
     errors: Error[]
 }
 
 export type Error = {
-    path: string,
-    name: string,
+    path: string
+    name: string
     problems: Problem[]
 }
 
 export type Problem = {
-    title: string,
-    region: Region,
+    title: string
+    region: Region
     message: MessagePart[]
 }
 
 export type Region = {
-    start: Position,
+    start: Position
     end: Position
 }
 
 export type Position = {
-    line: number,
+    line: number
     column: number
 }
 
 export type MessagePart = string | StyledString
 
 export type StyledString = {
-    bold?: boolean,
-    underline?: boolean,
-    color?: string,
-    'string': string
+    bold?: boolean
+    underline?: boolean
+    color?: string
+    string: string
 }
 
 export function buildMessage(result: Result): string {
@@ -122,32 +126,25 @@ function evalStringLiteral(value: string): string {
 export function buildErrorMessage(output: ErrorOutput): string {
     switch (output.type) {
         case 'message':
-            return output.line;
+            return output.line
         case 'compile-errors':
             return buildCompileErrorsMessage(output.errors)
     }
 }
 
 function buildCompileErrorsMessage(errors: Error[]): string {
-    return errors.map(buildCompileErrorMessage)
-        .join('\n\n')
+    return errors.map(buildCompileErrorMessage).join('\n\n')
 }
 
 function buildCompileErrorMessage(error: Error): string {
-    return [
-        `${error.path}`
-    ].concat(
-        error.problems.map(buildProblemMessage)
-    )
+    return [`${error.path}`]
+        .concat(error.problems.map(buildProblemMessage))
         .join('\n\n')
 }
 
 function buildProblemMessage(problem: Problem): string {
-    return [
-        `${buildRegion(problem.region)} ${problem.title}\n`
-    ].concat(
-        problem.message.map(getMessageString)
-    )
+    return [`${buildRegion(problem.region)} ${problem.title}\n`]
+        .concat(problem.message.map(getMessageString))
         .join('')
 }
 
@@ -160,7 +157,5 @@ function buildPosition(pos: Position): string {
 }
 
 function getMessageString(message: MessagePart): string {
-    return typeof message === 'string'
-        ? message
-        : message["string"]
+    return typeof message === 'string' ? message : message['string']
 }
