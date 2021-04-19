@@ -1,5 +1,4 @@
-//import { expect } from 'chai';
-
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { TestSuiteInfo } from "vscode-test-adapter-api"
 import { walk, getTestInfosByFile, findOffsetForTest, getFilesAndAllTestIds, ElmBinaries, buildElmTestArgs, buildElmTestArgsWithReport, oneLine, getFilePathUnderTests } from "../util"
 import { expect } from "chai";
