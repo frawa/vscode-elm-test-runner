@@ -52,7 +52,7 @@
         "lint-fix": "eslint --fix",
         "test": "mocha",
         "test-watch": "mocha --watch",
-        "vscode:prepublish": "yarn clean && yarn build && yarn test",
+        "vscode:prepublish": "yarn clean && yarn lint && yarn build && yarn test",
         "vsce-package": "vsce package --yarn",
         "vsce-publish": "vsce publish --yarn"
     },
