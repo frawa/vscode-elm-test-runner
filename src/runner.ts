@@ -43,6 +43,7 @@ import {
     parseErrorOutput,
     buildErrorMessage,
     EventTestCompleted,
+    TestStatus,
 } from './result'
 import {
     getTestInfosByFile,
@@ -164,33 +165,42 @@ export class ElmTestRunner {
                     .then((doc) => {
                         const text = doc.getText()
                         return nodes
-                            .map((node) => {
-                                const id = node.id
-                                const event = this.eventById.get(id)
-                                if (!event) {
-                                    throw new Error(`missing event for ${id}`)
-                                }
-                                const names = event.labels.slice(1)
-                                const status = event.status
-                                return [
-                                    findOffsetForTest(
-                                        names,
-                                        text,
-                                        (offset) =>
-                                            doc.positionAt(offset).character
-                                    ),
-                                    id,
-                                    status.tag,
-                                ] as [number | undefined, string, string]
-                            })
-                            .filter(([offset]) => offset !== undefined)
-                            .map(
-                                ([offset, id, status]) =>
-                                    [
-                                        doc.positionAt(offset!).line ?? 0,
+                            .map<[number | undefined, string, TestStatus]>(
+                                (node) => {
+                                    const id = node.id
+                                    const event = this.eventById.get(id)
+                                    if (!event) {
+                                        throw new Error(
+                                            `missing event for ${id}`
+                                        )
+                                    }
+                                    const names = event.labels.slice(1)
+                                    return [
+                                        findOffsetForTest(
+                                            names,
+                                            text,
+                                            (offset) =>
+                                                doc.positionAt(offset).character
+                                        ),
                                         id,
-                                        status,
-                                    ] as [number, string, string]
+                                        event.status,
+                                    ]
+                                }
+                            )
+                            .filter(([offset]) => offset !== undefined)
+                            .map<[number, string, TestStatus]>(
+                                ([offset, id, status]) => [
+                                    offset ?? 1313,
+                                    id,
+                                    status,
+                                ]
+                            )
+                            .map<[number, string, TestStatus]>(
+                                ([offset, id, status]) => [
+                                    doc.positionAt(offset).line ?? 0,
+                                    id,
+                                    status,
+                                ]
                             )
                             .map(
                                 ([line, id, status]) =>
@@ -198,9 +208,9 @@ export class ElmTestRunner {
                                         type: 'test',
                                         test: id,
                                         state:
-                                            status === 'pass'
+                                            status.tag === 'pass'
                                                 ? 'passed'
-                                                : status === 'toto'
+                                                : status.tag === 'todo'
                                                 ? 'skipped'
                                                 : 'fail',
                                         line,
@@ -312,6 +322,7 @@ export class ElmTestRunner {
                                     }
                                 })
                                 .filter((v) => v !== undefined)
+                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                 .map((v) => v!)
                             if (decorations && decorations.length > 0) {
                                 return <TestEvent>{
@@ -327,6 +338,7 @@ export class ElmTestRunner {
                         (events) =>
                             events
                                 .filter((v) => v !== undefined)
+                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                 .map((v) => v!)
                                 .map((event) => {
                                     testStatesEmitter.fire(event)

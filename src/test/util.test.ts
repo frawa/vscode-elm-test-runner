@@ -177,7 +177,9 @@ describe('util', () => {
                 text,
                 getIndent(text)
             )
-            expect(text.substr(offset! - 5, 13)).to.be.eq('test "nested"')
+            expect(
+                offset !== undefined && text.substr(offset - 5, 13)
+            ).to.be.eq('test "nested"')
         })
 
         it('match full path', () => {
@@ -195,7 +197,9 @@ describe('util', () => {
                 text,
                 getIndent(text)
             )
-            expect(text.substr(offset! - 5, 13)).to.be.eq('fuzz "nested"')
+            expect(
+                offset !== undefined && text.substr(offset - 5, 13)
+            ).to.be.eq('fuzz "nested"')
         })
 
         it("do not match 'wrong' path", () => {
@@ -213,7 +217,9 @@ describe('util', () => {
                 text,
                 getIndent(text)
             )
-            expect(text.substr(offset! - 9, 17)).to.be.eq('describe "nested"')
+            expect(
+                offset !== undefined && text.substr(offset - 9, 17)
+            ).to.be.eq('describe "nested"')
         })
 
         function getIndent(text: string): (offset: number) => number {
@@ -241,9 +247,9 @@ describe('util', () => {
                 text,
                 getIndent(text)
             )
-            expect(text.substr(offset! - 13, 21)).to.be.eq(
-                'fuzz (stuff) "nested"'
-            )
+            expect(
+                offset !== undefined && text.substr(offset - 13, 21)
+            ).to.be.eq('fuzz (stuff) "nested"')
         })
     })
 
