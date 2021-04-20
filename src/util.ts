@@ -1,5 +1,5 @@
 import { TestSuiteInfo, TestInfo } from 'vscode-test-adapter-api'
-import { Result } from './result'
+import { EventTestCompleted } from './result'
 
 export function* walk(
     node: TestSuiteInfo | TestInfo
@@ -116,8 +116,8 @@ export function oneLine(text: string): string {
     return text1
 }
 
-export function getFilePathUnderTests(result: Result): string {
-    const module = result.labels[0]
+export function getFilePathUnderTests(event: EventTestCompleted): string {
+    const module = event.labels[0]
     const file = module.split('.').join('/')
     return `${file}.elm`
 }

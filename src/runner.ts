@@ -19,6 +19,7 @@ import {
     parseOutput,
     parseErrorOutput,
     buildErrorMessage,
+    EventTestCompleted,
 } from './result'
 import {
     getTestInfosByFile,
@@ -85,14 +86,18 @@ export class ElmTestRunner {
 
             const result = this.resultById.get(node.id)
             const message = buildMessage(result!)
-            switch (result?.status) {
+            if (result?.event.tag !== 'testCompleted') {
+                return true
+            }
+            const event: EventTestCompleted = result.event
+            switch (result.event.status.tag) {
                 case 'pass': {
                     testStatesEmitter.fire(<TestEvent>{
                         type: 'test',
                         test: node.id,
                         state: 'passed',
                         message,
-                        description: `${result.duration}s`,
+                        description: `${event.duration}s`,
                     })
                     break
                 }
@@ -105,7 +110,7 @@ export class ElmTestRunner {
                     })
                     break
                 }
-                default:
+                case 'fail':
                     testStatesEmitter.fire(<TestEvent>{
                         type: 'test',
                         test: node.id,
@@ -138,8 +143,11 @@ export class ElmTestRunner {
                             .map((node) => {
                                 const id = node.id
                                 const result = this.resultById.get(id)
-                                const names = result?.labels.slice(1)
-                                const status = result?.status
+                                if (result?.event.tag !== 'testCompleted') {
+                                    return [undefined]
+                                }
+                                const names = result?.event.labels.slice(1)
+                                const status = result?.event.status
                                 return [
                                     findOffsetForTest(
                                         names!,
@@ -148,7 +156,7 @@ export class ElmTestRunner {
                                             doc.positionAt(offset).character
                                     ),
                                     id,
-                                    status,
+                                    status.tag,
                                 ] as [number | undefined, string, string]
                             })
                             .filter(([offset]) => offset !== undefined)
@@ -178,6 +186,7 @@ export class ElmTestRunner {
                     .then(
                         (events) =>
                             events.map((event) => {
+                                console.log('FW', event)
                                 testStatesEmitter.fire(event)
                                 return true
                             }).length
@@ -199,7 +208,8 @@ export class ElmTestRunner {
     ): Promise<number> {
         const testInfosByFile = getTestInfosByFile(suite, (test) => {
             const result = this.resultById.get(test.id)
-            const status = result?.status
+            const status =
+                result?.event.tag === 'testCompleted' && result.event.status.tag
             return status !== 'pass' && status !== 'todo'
         })
         return Promise.all(
@@ -211,50 +221,75 @@ export class ElmTestRunner {
                         return nodes.map((node) => {
                             const id = node.id
                             const result = this.resultById.get(id)
+                            if (result?.event.tag !== 'testCompleted') {
+                                return undefined
+                            }
+                            if (result.event.status.tag !== 'fail') {
+                                return undefined
+                            }
+                            const names = result.event.labels.slice(1)
+                            const failures = result.event.status.failures
                             const decorations:
                                 | TestDecoration[]
-                                | undefined = result?.failures
-                                .filter(
-                                    (failure) =>
-                                        failure?.reason?.data !== undefined
-                                )
+                                | undefined = failures
                                 .map((failure) => {
-                                    const data = failure.reason.data
-                                    const names = result?.labels.slice(1)
                                     const offset = findOffsetForTest(
                                         names!,
                                         text,
                                         (offset) =>
                                             doc.positionAt(offset).character
                                     )
-                                    if (data.expected && data.actual) {
-                                        const expectedIndex = text.indexOf(
-                                            data.expected,
-                                            offset
-                                        )
-                                        const expected = oneLine(data.expected)
-                                        const actual = oneLine(data.actual)
-                                        if (expectedIndex > -1) {
+                                    switch (failure.tag) {
+                                        case 'comparison': {
+                                            const expected = oneLine(
+                                                failure.expected
+                                            )
+                                            const expectedIndex = text.indexOf(
+                                                failure.expected,
+                                                offset
+                                            )
+                                            const actual = oneLine(
+                                                failure.actual
+                                            )
                                             const expectedLine = doc.positionAt(
                                                 expectedIndex
                                             ).line
                                             return <TestDecoration>{
                                                 line: expectedLine,
-                                                message: `${data.comparison} ${expected} ${actual}`,
-                                            }
-                                        } else if (offset) {
-                                            const line = doc.positionAt(offset)
-                                                .line
-                                            return <TestDecoration>{
-                                                line: line,
-                                                message: `${data.comparison} ${expected} ${actual}`,
+                                                message: `${failure.comparison} ${expected} ${actual}`,
                                             }
                                         }
-                                    } else if (offset) {
-                                        const line = doc.positionAt(offset).line
-                                        return <TestDecoration>{
-                                            line: line,
-                                            message: `${data.toString()}`,
+                                        case 'message': {
+                                            if (offset) {
+                                                const line = doc.positionAt(
+                                                    offset
+                                                ).line
+                                                return <TestDecoration>{
+                                                    line: line,
+                                                    message: `${failure.message}`,
+                                                }
+                                            }
+                                            break
+                                        }
+                                        case 'data': {
+                                            if (offset) {
+                                                const line = doc.positionAt(
+                                                    offset
+                                                ).line
+                                                const message = Object.keys(
+                                                    failure.data
+                                                )
+                                                    .map(
+                                                        (key) =>
+                                                            `$(key): ${failure.data[key]}`
+                                                    )
+                                                    .join('\n')
+                                                return <TestDecoration>{
+                                                    line: line,
+                                                    message,
+                                                }
+                                            }
+                                            break
                                         }
                                     }
                                 })
@@ -301,7 +336,7 @@ export class ElmTestRunner {
             this.loadingSuite = {
                 type: 'suite',
                 id: 'root',
-                label: 'root',
+                label: this.folder.name,
                 children: [],
             }
             this.loadingErrorMessage = undefined
@@ -458,7 +493,7 @@ export class ElmTestRunner {
             .filter((line) => line.length > 0)
             .map(parseOutput)
             .forEach((output) => {
-                switch (output.type) {
+                switch (output?.type) {
                     case 'message':
                         this.pushMessage(output.line)
                         break
@@ -482,39 +517,41 @@ export class ElmTestRunner {
     }
 
     private accept(result: Result): void {
-        if (!result) {
-            return
-        }
-        if (result.event === 'testCompleted') {
-            result.messages = this.popMessages()
-            const id = this.addResult(this.loadingSuite!, result)
-            this.resultById.set(id, result)
-        } else if (result.event === 'runStart') {
-            // nothing to do
-        } else if (result.event === 'runComplete') {
-            // nothing to do
+        switch (result?.event.tag) {
+            case 'testCompleted': {
+                result.messages = this.popMessages()
+                const id = this.addResult(this.loadingSuite!, result)
+                this.resultById.set(id, result)
+            }
+            case 'runStart':
+                break
+            case 'runComplete':
+                break
         }
     }
 
     private addResult(suite: TestSuiteInfo, result: Result): string {
-        let labels: string[] = []
-        labels = labels.concat(result.labels)
-        return this.addResult_(suite, labels, result)
+        if (result?.event.tag !== 'testCompleted') {
+            return '?' // TODO
+        }
+        const event = result.event
+        const labels: string[] = event.labels.concat(event.labels)
+        return this.addResult_(suite, labels, event)
     }
 
     private addResult_(
         suite: TestSuiteInfo,
         labels: string[],
-        result: Result
+        event: EventTestCompleted
     ): string {
         if (labels.length === 1) {
             let testInfo: TestInfo = {
                 type: 'test',
                 id: suite.id + '/' + labels[0],
                 label: labels[0],
-                file: this.getFilePath(result),
+                file: this.getFilePath(event),
             }
-            if (result.status === 'todo') {
+            if (event.status.tag === 'todo') {
                 testInfo = {
                     ...testInfo,
                     skipped: true,
@@ -527,7 +564,7 @@ export class ElmTestRunner {
 
         let found = suite.children.find((child) => child.label === label)
         if (found && found.type === 'suite') {
-            return this.addResult_(found, labels, result)
+            return this.addResult_(found, labels, event)
         }
 
         const newSuite: TestSuiteInfo = {
@@ -535,14 +572,14 @@ export class ElmTestRunner {
             id: suite.id + '/' + label!,
             label: label!,
             children: [],
-            file: this.getFilePath(result),
+            file: this.getFilePath(event),
         }
         suite.children.push(newSuite)
-        return this.addResult_(newSuite, labels, result)
+        return this.addResult_(newSuite, labels, event)
     }
 
-    private getFilePath(result: Result): string {
-        const path = getFilePathUnderTests(result)
+    private getFilePath(event: EventTestCompleted): string {
+        const path = getFilePathUnderTests(event)
         return `${this.folder.uri.fsPath}/tests/${path}`
     }
 }

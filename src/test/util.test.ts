@@ -332,34 +332,28 @@ describe('util', () => {
     describe('getFilePathUnderTests', () => {
         it('top level', () => {
             const path = getFilePathUnderTests({
-                event: 'anEvent',
-                status: 'aStatus',
+                tag: 'testCompleted',
                 labels: ['Module'],
-                failures: [],
-                messages: [],
-                duration: '',
+                status: { tag: 'pass' },
+                duration: 13,
             })
             expect(path).to.eq('Module.elm')
         })
         it('first level', () => {
             const path = getFilePathUnderTests({
-                event: 'anEvent',
-                status: 'aStatus',
+                tag: 'testCompleted',
                 labels: ['Module.Sub'],
-                failures: [],
-                messages: [],
-                duration: '',
+                status: { tag: 'pass' },
+                duration: 13,
             })
             expect(path).to.eq('Module/Sub.elm')
         })
         it('deeper level', () => {
             const path = getFilePathUnderTests({
-                event: 'anEvent',
-                status: 'aStatus',
+                tag: 'testCompleted',
                 labels: ['Module.Sub.Deep'],
-                failures: [],
-                messages: [],
-                duration: '',
+                status: { tag: 'pass' },
+                duration: 13,
             })
             expect(path).to.eq('Module/Sub/Deep.elm')
         })
