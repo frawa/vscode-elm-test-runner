@@ -361,6 +361,7 @@ describe('util', () => {
             const path = getFilePathUnderTests({
                 tag: 'testCompleted',
                 labels: ['Module'],
+                messages: [],
                 status: { tag: 'pass' },
                 duration: 13,
             })
@@ -370,6 +371,7 @@ describe('util', () => {
             const path = getFilePathUnderTests({
                 tag: 'testCompleted',
                 labels: ['Module.Sub'],
+                messages: [],
                 status: { tag: 'pass' },
                 duration: 13,
             })
@@ -379,6 +381,7 @@ describe('util', () => {
             const path = getFilePathUnderTests({
                 tag: 'testCompleted',
                 labels: ['Module.Sub.Deep'],
+                messages: [],
                 status: { tag: 'pass' },
                 duration: 13,
             })

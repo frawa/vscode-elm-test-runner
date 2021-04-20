@@ -59,7 +59,10 @@ import { Log } from 'vscode-test-adapter-util'
 export class ElmTestRunner {
     private loadedSuite?: TestSuiteInfo = undefined
 
-    private resultById: Map<string, Result> = new Map<string, Result>()
+    private eventById: Map<string, EventTestCompleted> = new Map<
+        string,
+        EventTestCompleted
+    >()
 
     private resolve: (
         value: TestLoadFinishedEvent | PromiseLike<TestLoadFinishedEvent>
@@ -106,13 +109,12 @@ export class ElmTestRunner {
                 state: 'running',
             })
 
-            const result = this.resultById.get(node.id)
-            const message = buildMessage(result!)
-            if (result?.event.tag !== 'testCompleted') {
-                return true
+            const event = this.eventById.get(node.id)
+            if (!event) {
+                throw new Error(`result for ${node.id}?`)
             }
-            const event: EventTestCompleted = result.event
-            switch (result.event.status.tag) {
+            const message = buildMessage(event)
+            switch (event.status.tag) {
                 case 'pass': {
                     testStatesEmitter.fire(<TestEvent>{
                         type: 'test',
@@ -164,15 +166,15 @@ export class ElmTestRunner {
                         return nodes
                             .map((node) => {
                                 const id = node.id
-                                const result = this.resultById.get(id)
-                                if (result?.event.tag !== 'testCompleted') {
-                                    return [undefined]
+                                const event = this.eventById.get(id)
+                                if (!event) {
+                                    throw new Error(`missing event for ${id}`)
                                 }
-                                const names = result?.event.labels.slice(1)
-                                const status = result?.event.status
+                                const names = event.labels.slice(1)
+                                const status = event.status
                                 return [
                                     findOffsetForTest(
-                                        names!,
+                                        names,
                                         text,
                                         (offset) =>
                                             doc.positionAt(offset).character
@@ -208,7 +210,6 @@ export class ElmTestRunner {
                     .then(
                         (events) =>
                             events.map((event) => {
-                                console.log('FW', event)
                                 testStatesEmitter.fire(event)
                                 return true
                             }).length
@@ -229,10 +230,8 @@ export class ElmTestRunner {
         >
     ): Promise<number> {
         const testInfosByFile = getTestInfosByFile(suite, (test) => {
-            const result = this.resultById.get(test.id)
-            const status =
-                result?.event.tag === 'testCompleted' && result.event.status.tag
-            return status !== 'pass' && status !== 'todo'
+            const event = this.eventById.get(test.id)
+            return event?.status.tag !== 'fail'
         })
         return Promise.all(
             Array.from(testInfosByFile.entries()).map(([file, nodes]) => {
@@ -242,21 +241,18 @@ export class ElmTestRunner {
                         const text = doc.getText()
                         return nodes.map((node) => {
                             const id = node.id
-                            const result = this.resultById.get(id)
-                            if (result?.event.tag !== 'testCompleted') {
+                            const event = this.eventById.get(id)
+                            if (event?.status.tag !== 'fail') {
                                 return undefined
                             }
-                            if (result.event.status.tag !== 'fail') {
-                                return undefined
-                            }
-                            const names = result.event.labels.slice(1)
-                            const failures = result.event.status.failures
+                            const names = event.labels.slice(1)
+                            const failures = event.status.failures
                             const decorations:
                                 | TestDecoration[]
                                 | undefined = failures
                                 .map((failure) => {
                                     const offset = findOffsetForTest(
-                                        names!,
+                                        names,
                                         text,
                                         (offset) =>
                                             doc.positionAt(offset).character
@@ -349,7 +345,10 @@ export class ElmTestRunner {
     }
 
     getFilesAndAllTestIds(tests: string[]): [string[], string[]] {
-        return getFilesAndAllTestIds(tests, this.loadedSuite!)
+        if (!this.loadedSuite) {
+            throw new Error('not loaded?')
+        }
+        return getFilesAndAllTestIds(tests, this.loadedSuite)
     }
 
     async runSomeTests(files?: string[]): Promise<TestLoadFinishedEvent> {
@@ -462,7 +461,11 @@ export class ElmTestRunner {
         elm.on('close', () => {
             const data = Buffer.concat(outChunks).toString('utf8')
             const lines = data.split('\n')
-            this.parse(lines)
+            try {
+                this.parse(lines)
+            } catch (err) {
+                this.log.warn('Failed to parse line', args)
+            }
 
             if (errChunks.length > 0) {
                 const data = Buffer.concat(errChunks).toString('utf8')
@@ -518,7 +521,14 @@ export class ElmTestRunner {
     private parse(lines: string[]): void {
         lines
             .filter((line) => line.length > 0)
-            .map(parseOutput)
+            .map((line) => {
+                try {
+                    return parseOutput(line)
+                } catch (err) {
+                    this.log.warn('Failed to parse line', line, err)
+                    return undefined
+                }
+            })
             .forEach((output) => {
                 switch (output?.type) {
                     case 'message':
@@ -546,9 +556,15 @@ export class ElmTestRunner {
     private accept(result: Result): void {
         switch (result?.event.tag) {
             case 'testCompleted': {
-                result.messages = this.popMessages()
-                const id = this.addResult(this.loadingSuite!, result)
-                this.resultById.set(id, result)
+                if (!this.loadingSuite) {
+                    throw new Error('not loading?')
+                }
+                const event: EventTestCompleted = {
+                    ...result.event,
+                    messages: this.popMessages(),
+                }
+                const id = this.addEvent(this.loadingSuite, event.labels, event)
+                this.eventById.set(id, event)
             }
             case 'runStart':
                 break
@@ -557,16 +573,7 @@ export class ElmTestRunner {
         }
     }
 
-    private addResult(suite: TestSuiteInfo, result: Result): string {
-        if (result?.event.tag !== 'testCompleted') {
-            return '?' // TODO
-        }
-        const event = result.event
-        const labels: string[] = event.labels.concat(event.labels)
-        return this.addResult_(suite, labels, event)
-    }
-
-    private addResult_(
+    private addEvent(
         suite: TestSuiteInfo,
         labels: string[],
         event: EventTestCompleted
@@ -587,22 +594,25 @@ export class ElmTestRunner {
             suite.children.push(testInfo)
             return testInfo.id
         }
-        const label = labels.shift()
+        if (labels.length === 0) {
+            throw new Error('empy labels?')
+        }
+        const label = labels.shift() ?? 'empty?'
 
         const found = suite.children.find((child) => child.label === label)
         if (found && found.type === 'suite') {
-            return this.addResult_(found, labels, event)
+            return this.addEvent(found, labels, event)
         }
 
         const newSuite: TestSuiteInfo = {
             type: 'suite',
-            id: suite.id + '/' + label!,
-            label: label!,
+            id: suite.id + '/' + label,
+            label: label,
             children: [],
             file: this.getFilePath(event),
         }
         suite.children.push(newSuite)
-        return this.addResult_(newSuite, labels, event)
+        return this.addEvent(newSuite, labels, event)
     }
 
     private getFilePath(event: EventTestCompleted): string {

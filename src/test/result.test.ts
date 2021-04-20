@@ -33,26 +33,6 @@ import {
     parseResult,
 } from '../result'
 
-function expectResult(
-    output: Output | undefined,
-    fun: (result: Result) => void
-) {
-    expect(output?.type).to.eq('result')
-    if (output?.type === 'result') {
-        fun(output)
-    }
-}
-
-function expectEvent(
-    result: Result | undefined,
-    fun: (event: EventTestCompleted) => void
-) {
-    expect(result?.event.tag).to.eq('testCompleted')
-    if (result?.event.tag === 'testCompleted') {
-        fun(result.event)
-    }
-}
-
 describe('Result', () => {
     describe('parse results', () => {
         it('one line pass', () => {
@@ -157,17 +137,14 @@ describe('Result', () => {
         it('empty', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const raw: any = {
-                event: '',
+                event: 'tralala',
                 status: 'pass',
                 labels: ['suite', 'test'],
                 failures: [],
                 messages: [],
                 duration: '0',
             }
-            const result = parseResult(raw)
-            expect(result).to.eq(undefined)
-            // const message = buildMessage(result)
-            // expect(message).to.eq('')
+            expect(() => parseResult(raw)).to.throw('unknown event tralala')
         })
         it('with messages', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -179,18 +156,19 @@ describe('Result', () => {
                 messages: ['hello', 'world'],
                 duration: '13',
             }
+            const event: EventTestCompleted = {
+                tag: 'testCompleted',
+                labels: ['suite', 'test'],
+                messages: ['hello', 'world'],
+                status: { tag: 'pass' },
+                duration: 13,
+            }
             const result: Result = {
                 type: 'result',
-                event: {
-                    tag: 'testCompleted',
-                    labels: ['suite', 'test'],
-                    status: { tag: 'pass' },
-                    duration: 13,
-                },
-                messages: ['hello', 'world'],
+                event,
             }
             expect(parseResult(raw)).to.eql(result)
-            const message = buildMessage(result)
+            const message = buildMessage(event)
             expect(message).to.eq('hello\nworld')
         })
 
@@ -211,26 +189,27 @@ describe('Result', () => {
                 messages: [],
                 duration: '0',
             }
-            const result: Result = {
-                type: 'result',
+            const event: EventTestCompleted = {
+                tag: 'testCompleted',
+                labels: ['suite', 'test'],
                 messages: [],
-                event: {
-                    tag: 'testCompleted',
-                    labels: ['suite', 'test'],
-                    duration: 0,
-                    status: {
-                        tag: 'fail',
-                        failures: [
-                            {
-                                tag: 'message',
-                                message: 'broken',
-                            },
-                        ],
-                    },
+                duration: 0,
+                status: {
+                    tag: 'fail',
+                    failures: [
+                        {
+                            tag: 'message',
+                            message: 'broken',
+                        },
+                    ],
                 },
             }
+            const result: Result = {
+                type: 'result',
+                event,
+            }
             expect(parseResult(raw)).to.eql(result)
-            const message = buildMessage(result)
+            const message = buildMessage(event)
             expect(message).to.eq('broken')
         })
 
@@ -252,26 +231,27 @@ describe('Result', () => {
                 messages: [],
                 duration: '0',
             }
-            const result: Result = {
-                type: 'result',
+            const event: EventTestCompleted = {
+                tag: 'testCompleted',
+                labels: ['suite', 'test'],
                 messages: [],
-                event: {
-                    tag: 'testCompleted',
-                    labels: ['suite', 'test'],
-                    duration: 0,
-                    status: {
-                        tag: 'fail',
-                        failures: [
-                            {
-                                tag: 'message',
-                                message: 'boom',
-                            },
-                        ],
-                    },
+                duration: 0,
+                status: {
+                    tag: 'fail',
+                    failures: [
+                        {
+                            tag: 'message',
+                            message: 'boom',
+                        },
+                    ],
                 },
             }
+            const result: Result = {
+                type: 'result',
+                event,
+            }
             expect(parseResult(raw)).to.eql(result)
-            const message = buildMessage(result)
+            const message = buildMessage(event)
             expect(message).to.eq('boom')
         })
 
@@ -296,28 +276,29 @@ describe('Result', () => {
                 messages: [],
                 duration: '0',
             }
-            const result: Result = {
-                type: 'result',
+            const event: EventTestCompleted = {
+                tag: 'testCompleted',
+                labels: ['suite', 'test'],
                 messages: [],
-                event: {
-                    tag: 'testCompleted',
-                    labels: ['suite', 'test'],
-                    duration: 0,
-                    status: {
-                        tag: 'fail',
-                        failures: [
-                            {
-                                tag: 'comparison',
-                                comparison: 'compare',
-                                actual: 'actual',
-                                expected: 'expected',
-                            },
-                        ],
-                    },
+                duration: 0,
+                status: {
+                    tag: 'fail',
+                    failures: [
+                        {
+                            tag: 'comparison',
+                            comparison: 'compare',
+                            actual: 'actual',
+                            expected: 'expected',
+                        },
+                    ],
                 },
             }
+            const result: Result = {
+                type: 'result',
+                event,
+            }
             expect(parseResult(raw)).to.eql(result)
-            const message = buildMessage(result)
+            const message = buildMessage(event)
             expect(message).to.eq(
                 ['actual', '| compare', 'expected'].join('\n')
             )
@@ -344,28 +325,29 @@ describe('Result', () => {
                 messages: [],
                 duration: '0',
             }
-            const result: Result = {
-                type: 'result',
+            const event: EventTestCompleted = {
+                tag: 'testCompleted',
+                labels: ['suite', 'test'],
                 messages: [],
-                event: {
-                    tag: 'testCompleted',
-                    labels: ['suite', 'test'],
-                    duration: 0,
-                    status: {
-                        tag: 'fail',
-                        failures: [
-                            {
-                                tag: 'comparison',
-                                comparison: 'compare',
-                                actual: 'multi\nline\nactual',
-                                expected: 'quoted "expected"',
-                            },
-                        ],
-                    },
+                duration: 0,
+                status: {
+                    tag: 'fail',
+                    failures: [
+                        {
+                            tag: 'comparison',
+                            comparison: 'compare',
+                            actual: 'multi\nline\nactual',
+                            expected: 'quoted "expected"',
+                        },
+                    ],
                 },
             }
+            const result: Result = {
+                type: 'result',
+                event,
+            }
             expect(parseResult(raw)).to.eql(result)
-            const message = buildMessage(result)
+            const message = buildMessage(event)
             expect(message).to.eq(
                 [
                     'multi',
@@ -397,29 +379,30 @@ describe('Result', () => {
                 messages: [],
                 duration: '0',
             }
-            const result: Result = {
-                type: 'result',
+            const event: EventTestCompleted = {
+                tag: 'testCompleted',
+                labels: ['suite', 'test'],
                 messages: [],
-                event: {
-                    tag: 'testCompleted',
-                    labels: ['suite', 'test'],
-                    duration: 0,
-                    status: {
-                        tag: 'fail',
-                        failures: [
-                            {
-                                tag: 'data',
-                                data: {
-                                    key1: 'value1',
-                                    key2: 'value2',
-                                },
+                duration: 0,
+                status: {
+                    tag: 'fail',
+                    failures: [
+                        {
+                            tag: 'data',
+                            data: {
+                                key1: 'value1',
+                                key2: 'value2',
                             },
-                        ],
-                    },
+                        },
+                    ],
                 },
             }
+            const result: Result = {
+                type: 'result',
+                event,
+            }
             expect(parseResult(raw)).to.eql(result)
-            const message = buildMessage(result)
+            const message = buildMessage(event)
             expect(message).to.eq(['key1: value1', 'key2: value2'].join('\n'))
         })
     })
@@ -445,30 +428,45 @@ describe('Result', () => {
             messages: ['broken'],
             duration: '0',
         }
-        const result: Result = {
-            type: 'result',
+        const event: EventTestCompleted = {
+            tag: 'testCompleted',
+            labels: ['suite', 'test'],
             messages: ['broken'],
-            event: {
-                tag: 'testCompleted',
-                labels: ['suite', 'test'],
-                duration: 0,
-                status: {
-                    tag: 'fail',
-                    failures: [
-                        {
-                            tag: 'comparison',
-                            comparison: 'compare',
-                            actual: 'actual',
-                            expected: 'expected',
-                        },
-                    ],
-                },
+            duration: 0,
+            status: {
+                tag: 'fail',
+                failures: [
+                    {
+                        tag: 'comparison',
+                        comparison: 'compare',
+                        actual: 'actual',
+                        expected: 'expected',
+                    },
+                ],
             },
         }
+        const result: Result = {
+            type: 'result',
+            event,
+        }
         expect(parseResult(raw)).to.eql(result)
-        const message = buildMessage(result)
+        const message = buildMessage(event)
         expect(message).to.eq(
             ['broken', 'actual', '| compare', 'expected'].join('\n')
         )
     })
 })
+
+function expectResult(output: Output, fun: (result: Result) => void) {
+    expect(output.type).to.eq('result')
+    if (output?.type === 'result') {
+        fun(output)
+    }
+}
+
+function expectEvent(result: Result, fun: (event: EventTestCompleted) => void) {
+    expect(result.event.tag).to.eq('testCompleted')
+    if (result?.event.tag === 'testCompleted') {
+        fun(result.event)
+    }
+}

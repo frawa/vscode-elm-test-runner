@@ -24,7 +24,7 @@ SOFTWARE.
 import * as json from 'jsonc-parser'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export function parseOutput(line: string): Output | undefined {
+export function parseOutput(line: string): Output {
     const errors: json.ParseError[] = []
     const parsed: any = json.parse(line, errors)
     const nojson = errors.find(
@@ -37,16 +37,13 @@ export function parseOutput(line: string): Output | undefined {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function parseResult(parsed: any): Result | undefined {
-    const messages: string[] =
-        parsed.messages?.map((m: string) => String(m)) ?? []
-
+export function parseResult(parsed: any): Result {
     if (parsed.event === 'runStart') {
         const event: Event = {
             tag: 'runStart',
             testCount: Number.parseInt(parsed.testCount),
         }
-        return { type: 'result', event, messages }
+        return { type: 'result', event }
     }
     if (parsed.event === 'runComplete') {
         const event: Event = {
@@ -55,23 +52,27 @@ export function parseResult(parsed: any): Result | undefined {
             failed: Number.parseInt(parsed.failed),
             duration: Number.parseInt(parsed.duration),
         }
-        return { type: 'result', event, messages }
+        return { type: 'result', event }
     }
     if (parsed.event === 'testCompleted') {
-        const status: TestStatus | undefined = parseStatus(parsed)
+        const status: TestStatus = parseStatus(parsed)
         if (status) {
+            const messages: string[] =
+                parsed.messages?.map((m: string) => String(m)) ?? []
             const event: Event = {
                 tag: 'testCompleted',
                 labels: parsed.labels,
+                messages,
                 duration: Number.parseInt(parsed.duration),
                 status,
             }
-            return { type: 'result', event, messages }
+            return { type: 'result', event }
         }
     }
+    throw new Error(`unknown event ${parsed.event}`)
 }
 
-function parseStatus(parsed: any): TestStatus | undefined {
+function parseStatus(parsed: any): TestStatus {
     if (parsed.status === 'pass') {
         return { tag: 'pass' }
     } else if (parsed.status === 'todo') {
@@ -81,9 +82,10 @@ function parseStatus(parsed: any): TestStatus | undefined {
         const failures = parsed.failures.map(parseFailure)
         return { tag: 'fail', failures }
     }
+    throw new Error(`unknown status ${parsed.status}`)
 }
 
-function parseFailure(failure: any): Failure | undefined {
+function parseFailure(failure: any): Failure {
     if (typeof failure.reason.data === 'object') {
         const data = failure.reason.data
         if (data.comparison) {
@@ -116,6 +118,7 @@ function parseFailure(failure: any): Failure | undefined {
             message: String(failure.message),
         }
     }
+    throw new Error(`unknown failure ${JSON.stringify(failure)}`)
 }
 
 export function parseErrorOutput(line: string): ErrorOutput {
@@ -142,7 +145,6 @@ export type Message = {
 export type Result = {
     type: 'result'
     event: Event
-    messages: string[]
 }
 
 export type Event =
@@ -153,6 +155,7 @@ export type Event =
 export type EventTestCompleted = {
     tag: 'testCompleted'
     labels: string[]
+    messages: string[]
     duration: number
     status: TestStatus
 }
@@ -208,29 +211,27 @@ export type StyledString = {
     string: string
 }
 
-export function buildMessage(result: Result): string | undefined {
-    if (result.event.tag === 'testCompleted') {
-        if (result.event.status.tag === 'fail') {
-            const lines = result.event.status.failures.flatMap((failure) => {
-                switch (failure.tag) {
-                    case 'comparison':
-                        return [
-                            failure.actual,
-                            '| ' + failure.comparison,
-                            failure.expected,
-                        ]
-                    case 'data':
-                        return Object.keys(failure.data).map(
-                            (key) => `${key}: ${failure.data[key]}`
-                        )
-                    case 'message':
-                        return [failure.message]
-                }
-            })
-            return result.messages.concat(lines).join('\n')
-        }
-        return result.messages.join('\n')
+export function buildMessage(event: EventTestCompleted): string | undefined {
+    if (event.status.tag === 'fail') {
+        const lines = event.status.failures.flatMap((failure) => {
+            switch (failure.tag) {
+                case 'comparison':
+                    return [
+                        failure.actual,
+                        '| ' + failure.comparison,
+                        failure.expected,
+                    ]
+                case 'data':
+                    return Object.keys(failure.data).map(
+                        (key) => `${key}: ${failure.data[key]}`
+                    )
+                case 'message':
+                    return [failure.message]
+            }
+        })
+        return event.messages.concat(lines).join('\n')
     }
+    return event.messages.join('\n')
 }
 
 function evalStringLiteral(value: string): string {

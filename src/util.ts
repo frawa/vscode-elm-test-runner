@@ -47,7 +47,7 @@ export function getTestInfosByFile(
         .filter((node) => node.file)
         .filter((node) => node.type === 'test' && pred1(node))
         .forEach((node) => {
-            const file = node.file!
+            const file = node.file ?? '?' // make TS happy
             const testInfo = node as TestInfo
             const infos = testInfosByFile.get(file)
             if (!infos) {
@@ -75,11 +75,14 @@ export function findOffsetForTest(
     }
     const leftMostTopLevelOffset = matches
         .map((match) => match.index)
-        .map((index) => [index, getIndent(index!)])
+        .filter((index) => index !== undefined)
+        .map((v) => v ?? 1313) // make TS happy
+        .map((index) => [index, getIndent(index)])
+        .filter((t) => t[0] !== undefined)
         .reduce((acc, next) => {
             const accIndent = acc[1]
             const indent = next[1]
-            return indent! < accIndent! ? next : acc
+            return indent < accIndent ? next : acc
         })[0]
 
     if (leftMostTopLevelOffset) {
@@ -100,13 +103,13 @@ export function getFilesAndAllTestIds(
     const files = Array.from(walk(suite))
         .filter((node) => selectedIds.has(node.id))
         .filter((node) => node.file)
-        .map((node) => node.file!)
+        .map((node) => node.file ?? '?') // make TS happy
 
     const selectedFiles = new Set(files)
     const allIds = Array.from(walk(suite))
         .filter((node) => node.file)
-        .filter((node) => selectedFiles.has(node.file!))
-        .map((node) => node.id!)
+        .filter((node) => node.file && selectedFiles.has(node.file)) // make TS happy
+        .map((node) => node.id ?? '?') // make TS happy
 
     return [files, allIds]
 }
