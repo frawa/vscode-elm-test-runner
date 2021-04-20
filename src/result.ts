@@ -1,5 +1,29 @@
+/*
+MIT License
+
+ Copyright 2021 Frank Wagner
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 import * as json from 'jsonc-parser'
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function parseOutput(line: string): Output | undefined {
     const errors: json.ParseError[] = []
     const parsed: any = json.parse(line, errors)
@@ -12,6 +36,7 @@ export function parseOutput(line: string): Output | undefined {
     return parseResult(parsed)
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function parseResult(parsed: any): Result | undefined {
     const messages: string[] =
         parsed.messages?.map((m: string) => String(m)) ?? []
@@ -60,7 +85,7 @@ function parseStatus(parsed: any): TestStatus | undefined {
 
 function parseFailure(failure: any): Failure | undefined {
     if (typeof failure.reason.data === 'object') {
-        let data = failure.reason.data
+        const data = failure.reason.data
         if (data.comparison) {
             return {
                 tag: 'comparison',
@@ -94,9 +119,9 @@ function parseFailure(failure: any): Failure | undefined {
 }
 
 export function parseErrorOutput(line: string): ErrorOutput {
-    var errors: json.ParseError[] = []
-    var output: CompileErrors = json.parse(line, errors)
-    var nojson = errors.find(
+    const errors: json.ParseError[] = []
+    const output: CompileErrors = json.parse(line, errors)
+    const nojson = errors.find(
         (e) => e.error === json.ParseErrorCode.InvalidSymbol
     )
     if (errors.length > 0 && nojson) {

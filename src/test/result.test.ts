@@ -1,3 +1,26 @@
+/*
+MIT License
+
+ Copyright 2021 Frank Wagner
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 import { expect } from 'chai'
 
 import {
@@ -33,7 +56,7 @@ function expectEvent(
 describe('Result', () => {
     describe('parse results', () => {
         it('one line pass', () => {
-            let line =
+            const line =
                 '{"event":"testCompleted","status":"pass","labels":["suite","nested","test"],"failures":[],"duration":"13"}'
             const output = parseOutput(line)
             expectResult(output, (result) => {
@@ -62,8 +85,8 @@ describe('Result', () => {
         })
 
         it('a message', () => {
-            let line = 'a message'
-            let output = parseOutput(line)
+            const line = 'a message'
+            const output = parseOutput(line)
             expect(output?.type).to.eq('message')
             if (output?.type === 'message') {
                 expect(output.line).to.eql(line)
@@ -71,8 +94,8 @@ describe('Result', () => {
         })
 
         it('boken json', () => {
-            let line = '{ boken'
-            let output = parseOutput(line)
+            const line = '{ boken'
+            const output = parseOutput(line)
             expect(output?.type).to.eq('message')
             if (output?.type === 'message') {
                 expect(output.line).to.eql(line)
@@ -80,7 +103,7 @@ describe('Result', () => {
         })
 
         it('compile errors', () => {
-            let line = `
+            const line = `
             {
                 "type": "compile-errors",
                 "errors": [{
@@ -132,6 +155,7 @@ describe('Result', () => {
 
     describe('build message', () => {
         it('empty', () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const raw: any = {
                 event: '',
                 status: 'pass',
@@ -146,6 +170,7 @@ describe('Result', () => {
             // expect(message).to.eq('')
         })
         it('with messages', () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const raw: any = {
                 event: 'testCompleted',
                 status: 'pass',
@@ -170,6 +195,7 @@ describe('Result', () => {
         })
 
         it('with failure with string reason', () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const raw: any = {
                 event: 'testCompleted',
                 status: 'fail',
@@ -209,6 +235,7 @@ describe('Result', () => {
         })
 
         it('with failure without raeson data', () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const raw: any = {
                 type: 'result',
                 event: 'testCompleted',
@@ -249,6 +276,7 @@ describe('Result', () => {
         })
 
         it('with failure with comparison data', () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const raw: any = {
                 event: 'testCompleted',
                 status: 'fail',
@@ -296,6 +324,7 @@ describe('Result', () => {
         })
 
         it('with failure with string literal in comparison data', () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const raw: any = {
                 event: 'testCompleted',
                 status: 'fail',
@@ -349,6 +378,7 @@ describe('Result', () => {
         })
 
         it('with failure with other data', () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const raw: any = {
                 event: 'testCompleted',
                 status: 'fail',
@@ -395,6 +425,7 @@ describe('Result', () => {
     })
 
     it('with message and failure with comparison data', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const raw: any = {
             event: 'testCompleted',
             status: 'fail',

@@ -1,3 +1,26 @@
+/*
+MIT License
+
+ Copyright 2021 Frank Wagner
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 import * as vscode from 'vscode'
 import {
     TestSuiteInfo,
@@ -40,6 +63,7 @@ export class ElmTestRunner {
 
     private resolve: (
         value: TestLoadFinishedEvent | PromiseLike<TestLoadFinishedEvent>
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
     ) => void = () => {}
     private loadingSuite?: TestSuiteInfo = undefined
     private loadingErrorMessage?: string = undefined
@@ -76,8 +100,6 @@ export class ElmTestRunner {
                 state: 'completed',
             })
         } else {
-            // node.type === 'test'
-
             testStatesEmitter.fire(<TestEvent>{
                 type: 'test',
                 test: node.id,
@@ -349,8 +371,8 @@ export class ElmTestRunner {
         const withOutput = vscode.workspace
             .getConfiguration('elmTestRunner', null)
             .get('showElmTestOutput')
-        let cwdPath = this.folder.uri.fsPath
-        let args = this.elmTestArgs(cwdPath, files)
+        const cwdPath = this.folder.uri.fsPath
+        const args = this.elmTestArgs(cwdPath, files)
         if (withOutput) {
             this.runElmTestsWithOutput(cwdPath, args)
         } else {
@@ -359,13 +381,13 @@ export class ElmTestRunner {
     }
 
     private runElmTestsWithOutput(cwdPath: string, args: string[]) {
-        let kind: vscode.TaskDefinition = {
+        const kind: vscode.TaskDefinition = {
             type: 'elm-test',
         }
 
         this.log.info('Running Elm Tests as task', args)
 
-        let task = new vscode.Task(
+        const task = new vscode.Task(
             kind,
             this.folder,
             'Run Elm Test',
@@ -383,7 +405,7 @@ export class ElmTestRunner {
             showReuseMessage: false,
         }
 
-        vscode.tasks.executeTask(task).then(() => {})
+        vscode.tasks.executeTask(task)
 
         vscode.tasks.onDidEndTaskProcess((event) => {
             if (task === event.execution.task) {
@@ -413,7 +435,7 @@ export class ElmTestRunner {
         this.log.info('Running Elm Tests', args)
 
         const argsWithReport = buildElmTestArgsWithReport(args)
-        let elm = child_process.spawn(
+        const elm = child_process.spawn(
             argsWithReport[0],
             argsWithReport.slice(1),
             {
@@ -484,7 +506,12 @@ export class ElmTestRunner {
         binary: string,
         projectRoot: string
     ): string | undefined {
-        let binaryPath = path.join(projectRoot, 'node_modules', '.bin', binary)
+        const binaryPath = path.join(
+            projectRoot,
+            'node_modules',
+            '.bin',
+            binary
+        )
         return fs.existsSync(binaryPath) ? binaryPath : undefined
     }
 
@@ -511,7 +538,7 @@ export class ElmTestRunner {
     }
 
     private popMessages(): string[] {
-        let result = this.pendingMessages
+        const result = this.pendingMessages
         this.pendingMessages = []
         return result
     }
@@ -560,9 +587,9 @@ export class ElmTestRunner {
             suite.children.push(testInfo)
             return testInfo.id
         }
-        let label = labels.shift()
+        const label = labels.shift()
 
-        let found = suite.children.find((child) => child.label === label)
+        const found = suite.children.find((child) => child.label === label)
         if (found && found.type === 'suite') {
             return this.addResult_(found, labels, event)
         }
