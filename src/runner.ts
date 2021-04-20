@@ -575,7 +575,8 @@ export class ElmTestRunner {
                     ...result.event,
                     messages: this.popMessages(),
                 }
-                const id = this.addEvent(this.loadingSuite, event.labels, event)
+                const labels: string[] = [...event.labels]
+                const id = this.addEvent(this.loadingSuite, labels, event)
                 this.eventById.set(id, event)
             }
             case 'runStart':
