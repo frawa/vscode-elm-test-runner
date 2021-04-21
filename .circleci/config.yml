@@ -25,9 +25,11 @@ jobs:
                       - v1-dependencies-{{ checksum "package.json" }}-{{ checksum "yarn.lock" }}
                       - v1-dependencies
 
-            - run: |
-              node --version
-              yarn install
+            - run:
+                  name: install
+                  command: |
+                      node --version
+                      yarn install
 
             - save_cache:
                   paths:
