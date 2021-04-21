@@ -6,8 +6,8 @@ version: 2
 jobs:
     build:
         docker:
-            # specify the version you desire here
-            - image: circleci/node:13.2-browsers
+            #https://circleci.com/developer/images/image/cimg/node
+            - image: 14.16.1-browsers
 
             # Specify service dependencies here if necessary
             # CircleCI maintains a library of pre-built images
@@ -25,7 +25,9 @@ jobs:
                       - v1-dependencies-{{ checksum "package.json" }}-{{ checksum "yarn.lock" }}
                       - v1-dependencies
 
-            - run: yarn install
+            - run: |
+              node --version
+              yarn install
 
             - save_cache:
                   paths:
