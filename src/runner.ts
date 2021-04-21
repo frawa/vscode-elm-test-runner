@@ -148,7 +148,7 @@ export class ElmTestRunner {
         return true
     }
 
-    async fireLineEvents(
+    async fireDecorationEvents(
         suite: TestSuiteInfo,
         testStatesEmitter: vscode.EventEmitter<
             | TestRunStartedEvent
@@ -164,58 +164,28 @@ export class ElmTestRunner {
                     .openTextDocument(file)
                     .then((doc) => {
                         const text = doc.getText()
-                        return nodes
-                            .map<[number | undefined, string, TestStatus]>(
-                                (node) => {
-                                    const id = node.id
-                                    const event = this.eventById.get(id)
-                                    if (!event) {
-                                        throw new Error(
-                                            `missing event for ${id}`
-                                        )
-                                    }
-                                    const names = event.labels.slice(1)
-                                    return [
-                                        findOffsetForTest(
-                                            names,
-                                            text,
-                                            (offset) =>
-                                                doc.positionAt(offset).character
-                                        ),
-                                        id,
-                                        event.status,
-                                    ]
-                                }
+                        return nodes.map((node) => {
+                            const id = node.id
+                            const event = this.eventById.get(id)
+                            if (!event) {
+                                throw new Error(`missing event for ${id}`)
+                            }
+                            const names = event.labels.slice(1)
+                            const offset = findOffsetForTest(
+                                names,
+                                text,
+                                (offset) => doc.positionAt(offset).character
                             )
-                            .filter(([offset]) => offset !== undefined)
-                            .map<[number, string, TestStatus]>(
-                                ([offset, id, status]) => [
-                                    offset ?? 1313,
-                                    id,
-                                    status,
-                                ]
-                            )
-                            .map<[number, string, TestStatus]>(
-                                ([offset, id, status]) => [
-                                    doc.positionAt(offset).line ?? 0,
-                                    id,
-                                    status,
-                                ]
-                            )
-                            .map(
-                                ([line, id, status]) =>
-                                    <TestEvent>{
-                                        type: 'test',
-                                        test: id,
-                                        state:
-                                            status.tag === 'pass'
-                                                ? 'passed'
-                                                : status.tag === 'todo'
-                                                ? 'skipped'
-                                                : 'fail',
-                                        line,
-                                    }
-                            )
+                            const line =
+                                (offset && doc.positionAt(offset).line) ?? 0
+                            const lineOf = (search: string) => {
+                                const index = text.indexOf(search, offset)
+                                return index >= 0
+                                    ? doc.positionAt(index).line
+                                    : line
+                            }
+                            return createTestEvent(id, event, lineOf, line)
+                        })
                     })
                     .then(
                         (events) =>
@@ -223,127 +193,6 @@ export class ElmTestRunner {
                                 testStatesEmitter.fire(event)
                                 return true
                             }).length
-                    )
-            })
-        ).then((counts) =>
-            counts.length > 0 ? counts.reduce((a, b) => a + b) : 0
-        )
-    }
-
-    async fireDecorationEvents(
-        suite: TestSuiteInfo,
-        testStatesEmitter: vscode.EventEmitter<
-            | TestRunStartedEvent
-            | TestRunFinishedEvent
-            | TestSuiteEvent
-            | TestEvent
-        >
-    ): Promise<number> {
-        const testInfosByFile = getTestInfosByFile(suite, (test) => {
-            const event = this.eventById.get(test.id)
-            return event?.status.tag !== 'fail'
-        })
-        return Promise.all(
-            Array.from(testInfosByFile.entries()).map(([file, nodes]) => {
-                return vscode.workspace
-                    .openTextDocument(file)
-                    .then((doc) => {
-                        const text = doc.getText()
-                        return nodes.map((node) => {
-                            const id = node.id
-                            const event = this.eventById.get(id)
-                            if (event?.status.tag !== 'fail') {
-                                return undefined
-                            }
-                            const names = event.labels.slice(1)
-                            const failures = event.status.failures
-                            const decorations:
-                                | TestDecoration[]
-                                | undefined = failures
-                                .map((failure) => {
-                                    const offset = findOffsetForTest(
-                                        names,
-                                        text,
-                                        (offset) =>
-                                            doc.positionAt(offset).character
-                                    )
-                                    switch (failure.tag) {
-                                        case 'comparison': {
-                                            const expected = oneLine(
-                                                failure.expected
-                                            )
-                                            const expectedIndex = text.indexOf(
-                                                failure.expected,
-                                                offset
-                                            )
-                                            const actual = oneLine(
-                                                failure.actual
-                                            )
-                                            const expectedLine = doc.positionAt(
-                                                expectedIndex
-                                            ).line
-                                            return <TestDecoration>{
-                                                line: expectedLine,
-                                                message: `${failure.comparison} ${expected} ${actual}`,
-                                            }
-                                        }
-                                        case 'message': {
-                                            if (offset) {
-                                                const line = doc.positionAt(
-                                                    offset
-                                                ).line
-                                                return <TestDecoration>{
-                                                    line: line,
-                                                    message: `${failure.message}`,
-                                                }
-                                            }
-                                            break
-                                        }
-                                        case 'data': {
-                                            if (offset) {
-                                                const line = doc.positionAt(
-                                                    offset
-                                                ).line
-                                                const message = Object.keys(
-                                                    failure.data
-                                                )
-                                                    .map(
-                                                        (key) =>
-                                                            `$(key): ${failure.data[key]}`
-                                                    )
-                                                    .join('\n')
-                                                return <TestDecoration>{
-                                                    line: line,
-                                                    message,
-                                                }
-                                            }
-                                            break
-                                        }
-                                    }
-                                })
-                                .filter((v) => v !== undefined)
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                .map((v) => v!)
-                            if (decorations && decorations.length > 0) {
-                                return <TestEvent>{
-                                    type: 'test',
-                                    test: node.id,
-                                    state: 'failed',
-                                    decorations,
-                                }
-                            }
-                        })
-                    })
-                    .then(
-                        (events) =>
-                            events
-                                .filter((v) => v !== undefined)
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                .map((v) => v!)
-                                .map((event) => {
-                                    testStatesEmitter.fire(event)
-                                    return true
-                                }).length
                     )
             })
         ).then((counts) =>
@@ -632,4 +481,80 @@ export class ElmTestRunner {
         const path = getFilePathUnderTests(event)
         return `${this.folder.uri.fsPath}/tests/${path}`
     }
+}
+
+function createTestEvent(
+    id: string,
+    event: EventTestCompleted,
+    lineOf: (text: string) => number,
+    line: number
+): TestEvent {
+    switch (event.status.tag) {
+        case 'pass':
+            return <TestEvent>{
+                type: 'test',
+                test: id,
+                state: 'passed',
+                line,
+            }
+        case 'todo':
+            return <TestEvent>{
+                type: 'test',
+                test: id,
+                state: 'skipped',
+                line,
+            }
+        case 'fail': {
+            const decorations: TestDecoration[] = createDecorations(
+                event.status,
+                lineOf,
+                line
+            )
+            return <TestEvent>{
+                type: 'test',
+                test: id,
+                state: 'failed',
+                line,
+                decorations,
+            }
+        }
+    }
+}
+
+function createDecorations(
+    status: TestStatus,
+    lineOf: (text: string) => number,
+    line?: number
+): TestDecoration[] {
+    if (status.tag !== 'fail') {
+        return []
+    }
+    return status.failures.map((failure) => {
+        switch (failure.tag) {
+            case 'comparison': {
+                const expected = oneLine(failure.expected)
+                const lineOfExpected = lineOf(failure.expected)
+                const actual = oneLine(failure.actual)
+                return <TestDecoration>{
+                    line: lineOfExpected,
+                    message: `${failure.comparison} ${expected} ${actual}`,
+                }
+            }
+            case 'message': {
+                return <TestDecoration>{
+                    line,
+                    message: `${failure.message}`,
+                }
+            }
+            case 'data': {
+                const message = Object.keys(failure.data)
+                    .map((key) => `$(key): ${failure.data[key]}`)
+                    .join('\n')
+                return <TestDecoration>{
+                    line,
+                    message,
+                }
+            }
+        }
+    })
 }
