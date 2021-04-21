@@ -38,14 +38,12 @@ export function* walk(
 }
 
 export function getTestInfosByFile(
-    suite: TestSuiteInfo,
-    pred?: (test: TestInfo) => boolean
+    suite: TestSuiteInfo
 ): Readonly<Map<string, TestInfo[]>> {
-    const pred1 = pred ?? (() => true)
     const testInfosByFile = new Map<string, TestInfo[]>()
     Array.from(walk(suite))
         .filter((node) => node.file)
-        .filter((node) => node.type === 'test' && pred1(node))
+        .filter((node) => node.type === 'test')
         .forEach((node) => {
             const file = node.file ?? '?' // make TS happy
             const testInfo = node as TestInfo
