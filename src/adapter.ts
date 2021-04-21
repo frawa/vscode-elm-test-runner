@@ -81,18 +81,15 @@ export class ElmTestAdapter implements TestAdapter {
             const loadedEvent = await this.runner.runAllTests()
             this.testsEmitter.fire(loadedEvent)
             if (!loadedEvent.errorMessage && loadedEvent.suite) {
-                await this.runner.fireEvents(
-                    loadedEvent.suite,
-                    this.testStatesEmitter
-                )
-                // await this.runner.fireLineEvents(
-                //     loadedEvent.suite!,
-                //     this.testStatesEmitter
-                // )
-                // await this.runner.fireDecorationEvents(
-                //     loadedEvent.suite!,
-                //     this.testStatesEmitter
-                // )
+                const suite = loadedEvent.suite
+                await this.runner
+                    .fireEvents(suite, this.testStatesEmitter)
+                    .then(() =>
+                        this.runner.fireDecorationEvents(
+                            suite,
+                            this.testStatesEmitter
+                        )
+                    )
             }
         } catch (error) {
             this.log.info('Failed to load tests', error)
@@ -114,18 +111,15 @@ export class ElmTestAdapter implements TestAdapter {
 
         const loadedEvent = await this.runner.runSomeTests(files)
         if (loadedEvent.suite) {
-            await this.runner.fireEvents(
-                loadedEvent.suite,
-                this.testStatesEmitter
-            )
-            await this.runner.fireLineEvents(
-                loadedEvent.suite,
-                this.testStatesEmitter
-            )
-            await this.runner.fireDecorationEvents(
-                loadedEvent.suite,
-                this.testStatesEmitter
-            )
+            const suite = loadedEvent.suite
+            await this.runner
+                .fireEvents(suite, this.testStatesEmitter)
+                .then(() =>
+                    this.runner.fireDecorationEvents(
+                        suite,
+                        this.testStatesEmitter
+                    )
+                )
         }
         this.testStatesEmitter.fire(<TestRunFinishedEvent>{ type: 'finished' })
     }
