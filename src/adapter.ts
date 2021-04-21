@@ -84,12 +84,13 @@ export class ElmTestAdapter implements TestAdapter {
                 const suite = loadedEvent.suite
                 await this.runner
                     .fireEvents(suite, this.testStatesEmitter)
-                    .then(() =>
+                    .then(() => {
                         this.runner.fireDecorationEvents(
                             suite,
                             this.testStatesEmitter
                         )
-                    )
+                        return true
+                    })
             }
         } catch (error) {
             this.log.info('Failed to load tests', error)
@@ -114,12 +115,13 @@ export class ElmTestAdapter implements TestAdapter {
             const suite = loadedEvent.suite
             await this.runner
                 .fireEvents(suite, this.testStatesEmitter)
-                .then(() =>
+                .then(() => {
                     this.runner.fireDecorationEvents(
                         suite,
                         this.testStatesEmitter
                     )
-                )
+                    return true
+                })
         }
         this.testStatesEmitter.fire(<TestRunFinishedEvent>{ type: 'finished' })
     }
