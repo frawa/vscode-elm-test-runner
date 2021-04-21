@@ -17,6 +17,11 @@ Running Elm tests in VS Code.
 
 ## CHANGES
 
+### 0.9.9
+
+- fixes for larger test suites
+- fixes for workspaces with multiple folders
+- speed up availability of test results in view 
 ### 0.9.8
 
 - improvements for larger test suites
