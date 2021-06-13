@@ -1,5 +1,10 @@
 # Elm Test Runner
 
+This project is deprecated. 
+
+An improved support for Test Explorer UI has been merged into:
+https://marketplace.visualstudio.com/items?itemName=Elmtooling.elm-ls-vscode (GitHub: https://github.com/elm-tooling/elm-language-client-vscode)
+
 Running Elm tests in VS Code.
 
 ## Features
@@ -16,6 +21,11 @@ Running Elm tests in VS Code.
 - Support locally installed elm-make (for Elm 0.18).
 
 ## CHANGES
+
+### 0.9.10
+- Deprecation. 
+- Last version.
+- Features moved to https://marketplace.visualstudio.com/items?itemName=Elmtooling.elm-ls-vscode
 
 ### 0.9.9
 
